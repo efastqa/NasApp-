@@ -263,7 +263,7 @@ export const AdminLockScreen: React.FC<AdminLockScreenProps> = ({
                 {isAr ? 'تسجيل دخول المشرف / الكاشير' : 'Admin & Staff Access'}
               </h2>
               <p className={`text-xs ${isLight ? 'text-slate-500' : 'text-[#9C9DA3]'}`}>
-                {isAr ? 'أدخل رمز المرور (الرمز الافتراضي: 1234)' : 'Enter Admin PIN to unlock (Default: 1234)'}
+                {isAr ? 'أدخل رمز مرور المشرف للمتابعة' : 'Enter Admin Security PIN to continue'}
               </p>
             </div>
 
@@ -451,7 +451,7 @@ export const AdminLockScreen: React.FC<AdminLockScreenProps> = ({
                   required
                   value={currentPinInput}
                   onChange={(e) => setCurrentPinInput(e.target.value)}
-                  placeholder="1234"
+                  placeholder="••••"
                   className={`w-full px-3 py-2.5 rounded-xl text-sm font-mono outline-none border transition ${
                     isLight 
                       ? 'bg-slate-50 border-slate-200 focus:border-emerald-500 text-slate-900' 

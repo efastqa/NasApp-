@@ -19,6 +19,7 @@ import {
   Lock,
   Unlock,
   KeyRound,
+  ShieldCheck,
   Sun,
   Moon
 } from 'lucide-react';
@@ -39,6 +40,7 @@ import { PrintReceiptArea } from './components/pos/PrintReceiptArea';
 import { BarcodeScannerModal } from './components/pos/BarcodeScannerModal';
 import { BarcodeLabelsView } from './components/pos/BarcodeLabelsView';
 import { AdminLockScreen } from './components/pos/AdminLockScreen';
+import { AdminSettingsModal } from './components/pos/AdminSettingsModal';
 import { NasappBrandLogo } from './components/NasappBrandLogo';
 
 // Developer Tools components
@@ -177,6 +179,9 @@ export const App: React.FC = () => {
     }
     showToast(isAr ? '🔒 تم قفل لوحة التحكم' : '🔒 POS Admin Locked');
   };
+
+  // Admin Security & Settings Modal
+  const [showAdminSettingsModal, setShowAdminSettingsModal] = useState<boolean>(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -681,7 +686,15 @@ export const App: React.FC = () => {
         products={products}
         orders={orders}
         onSubmitOrder={handleCustomerSubmitOrder}
-        onExitCustomerMode={isUrlCustomerMode ? undefined : () => setCustomerMode(false)}
+        onExitCustomerMode={isUrlCustomerMode ? undefined : () => {
+          setIsAdminUnlocked(false);
+          try {
+            sessionStorage.removeItem('nasapp_admin_session');
+          } catch (e) {
+            console.warn(e);
+          }
+          setCustomerMode(false);
+        }}
         lang={lang}
         onToggleLang={toggleLang}
         storeLogo={storeLogo}
@@ -1020,6 +1033,20 @@ export const App: React.FC = () => {
         {/* Sidebar Footer */}
         <div className="pt-4 space-y-2">
           
+          {/* Admin Security & Settings */}
+          <button
+            onClick={() => setShowAdminSettingsModal(true)}
+            className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
+              isLight
+                ? 'bg-slate-50 hover:bg-emerald-50 border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800'
+                : 'bg-[#121215] hover:bg-[#1E1E21] border-[#1E1E21] hover:border-[#39FFB0]/40 text-[#9C9DA3] hover:text-[#39FFB0]'
+            }`}
+            title={isAr ? 'حماية ورمز المشرف' : 'Admin Security & PIN'}
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            <span>{isAr ? 'حماية ورمز المشرف' : 'Admin Security & PIN'}</span>
+          </button>
+
           {/* Quick Lock POS Button */}
           <button
             onClick={handleLockAdmin}
@@ -1242,6 +1269,16 @@ export const App: React.FC = () => {
         onDetected={handleGlobalScan}
         products={products}
         lang={lang}
+      />
+
+      {/* Admin Security & Store Branding Modal */}
+      <AdminSettingsModal
+        isOpen={showAdminSettingsModal}
+        onClose={() => setShowAdminSettingsModal(false)}
+        lang={lang}
+        storeLogo={storeLogo}
+        onUpdateStoreLogo={handleUpdateStoreLogo}
+        theme={theme}
       />
 
     </div>

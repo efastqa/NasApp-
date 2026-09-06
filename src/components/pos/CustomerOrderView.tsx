@@ -23,13 +23,9 @@ import {
   Bell,
   RefreshCw,
   SearchCode,
-  ImageIcon,
-  Upload,
-  Link as LinkIcon,
   Store,
   Check,
   Download,
-  RotateCcw,
   Sun,
   Moon
 } from 'lucide-react';
@@ -118,16 +114,9 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
   const [scannerOpen, setScannerOpen] = useState<boolean>(false);
 
   // Store Logo state (defaults to null which renders the original NasappBrandLogo)
-  const [storeLogo, setStoreLogo] = useState<string | null>(() => {
-    try {
-      return initialStoreLogo !== undefined ? initialStoreLogo : localStorage.getItem('nasapp_store_logo');
-    } catch {
-      return null;
-    }
-  });
-  const [showLogoModal, setShowLogoModal] = useState<boolean>(false);
-  const [logoInputUrl, setLogoInputUrl] = useState<string>('');
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const storeLogo = initialStoreLogo !== undefined 
+    ? initialStoreLogo 
+    : (typeof window !== 'undefined' ? localStorage.getItem('nasapp_store_logo') : null);
 
   // Modifiers Selection
   const [modifierProduct, setModifierProduct] = useState<Product | null>(null);
@@ -151,42 +140,6 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
     const matchesCat = activeCategory === 'All' || p.category === activeCategory;
     return matchesQ && matchesCat;
   });
-
-  const handleSaveLogo = (logoStr: string | null) => {
-    setStoreLogo(logoStr);
-    try {
-      if (logoStr) {
-        localStorage.setItem('nasapp_store_logo', logoStr);
-      } else {
-        localStorage.removeItem('nasapp_store_logo');
-      }
-    } catch (e) {
-      console.warn(e);
-    }
-    if (onUpdateStoreLogo) {
-      onUpdateStoreLogo(logoStr);
-    }
-    setShowLogoModal(false);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > 2 * 1024 * 1024) {
-      alert(isAr ? 'حجم الصورة يجب أن لا يتجاوز 2 ميجابايت' : 'Image size must be less than 2MB');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (uploadEvent) => {
-      const result = uploadEvent.target?.result as string;
-      if (result) {
-        handleSaveLogo(result);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleProductSelect = (product: Product) => {
     if (product.stock <= 0) return;
@@ -354,16 +307,12 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
           
           <div className="flex items-center gap-3">
             {/* Store Logo Display */}
-            <div 
-              onClick={() => setShowLogoModal(true)}
-              className="relative group cursor-pointer"
-              title={isAr ? 'تغيير شعار المتجر' : 'Click to Change Store Logo'}
-            >
+            <div className="relative">
               {storeLogo ? (
-                <div className={`w-11 h-11 rounded-2xl border-2 overflow-hidden flex items-center justify-center p-1 shadow-md transition group-hover:scale-105 ${
+                <div className={`w-11 h-11 rounded-2xl border-2 overflow-hidden flex items-center justify-center p-1 shadow-md transition ${
                   isLight 
-                    ? 'bg-white border-emerald-500/60 shadow-emerald-500/10 group-hover:border-emerald-600' 
-                    : 'bg-[#000000] border-[#39FFB0]/50 shadow-[#39FFB0]/10 group-hover:border-[#39FFB0]'
+                    ? 'bg-white border-emerald-500/60 shadow-emerald-500/10' 
+                    : 'bg-[#000000] border-[#39FFB0]/50 shadow-[#39FFB0]/10'
                 }`}>
                   <img 
                     src={storeLogo} 
@@ -372,15 +321,10 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
                   />
                 </div>
               ) : (
-                <div className="w-11 h-11 transition group-hover:scale-105">
+                <div className="w-11 h-11">
                   <NasappBrandLogo theme={currentTheme} className="w-11 h-11 shadow-md rounded-2xl" />
                 </div>
               )}
-              <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow ${
-                isLight ? 'bg-emerald-600 text-white' : 'bg-[#39FFB0] text-black'
-              }`}>
-                ✎
-              </span>
             </div>
 
             <div>
@@ -415,20 +359,6 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
             >
               {isLight ? <Moon className="w-3.5 h-3.5 text-slate-700" /> : <Sun className="w-3.5 h-3.5 text-amber-300" />}
               <span className="hidden sm:inline">{isLight ? (isAr ? 'داكن' : 'Dark') : (isAr ? 'فاتح' : 'Light')}</span>
-            </button>
-
-            {/* Logo Settings / Upload Button */}
-            <button
-              onClick={() => setShowLogoModal(true)}
-              className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 border rounded-xl text-xs transition cursor-pointer ${
-                isLight 
-                  ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-600 hover:text-emerald-700' 
-                  : 'bg-[#151517] hover:bg-[#1E1E21] border-[#1E1E21] hover:border-[#39FFB0]/40 text-[#9C9DA3] hover:text-[#39FFB0]'
-              }`}
-              title="Change Store Logo"
-            >
-              <ImageIcon className="w-3.5 h-3.5" />
-              <span>{isAr ? 'الشعار' : 'Logo'}</span>
             </button>
 
             {/* Live Track Order Lookup Button */}
@@ -491,8 +421,7 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
             <div className="flex items-center gap-4 text-center sm:text-left">
               {/* Big Store Logo Badge */}
               <div 
-                onClick={() => setShowLogoModal(true)}
-                className={`w-16 h-16 sm:w-18 sm:h-18 rounded-2xl border-2 overflow-hidden flex items-center justify-center p-1.5 shrink-0 shadow-lg cursor-pointer hover:scale-105 transition ${
+                className={`w-16 h-16 sm:w-18 sm:h-18 rounded-2xl border-2 overflow-hidden flex items-center justify-center p-1.5 shrink-0 shadow-lg ${
                   isLight 
                     ? 'bg-white border-emerald-400 shadow-emerald-600/10' 
                     : 'bg-[#000000] border-[#39FFB0]/40 shadow-[#39FFB0]/10'
@@ -1149,163 +1078,6 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
         )}
 
       </div>
-
-      {/* Upload / Change Store Logo Modal */}
-      {showLogoModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className={`border rounded-3xl max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl animate-in zoom-in-95 ${
-            isLight ? 'bg-white border-slate-200 text-slate-800' : 'bg-[#0A0A0B] border-[#1E1E21] text-[#F5F5F4]'
-          }`}>
-            <div className={`flex items-center justify-between pb-3 border-b ${
-              isLight ? 'border-slate-200' : 'border-[#1E1E21]'
-            }`}>
-              <h3 className={`font-bold text-sm flex items-center gap-2 ${
-                isLight ? 'text-slate-900' : 'text-white'
-              }`}>
-                <ImageIcon className={`w-4 h-4 ${isLight ? 'text-emerald-600' : 'text-[#39FFB0]'}`} />
-                <span>{isAr ? 'تخصيص شعار المتجر (Logo)' : 'Customize Store Logo'}</span>
-              </h3>
-              <button
-                onClick={() => setShowLogoModal(false)}
-                className={`text-xs cursor-pointer p-1 ${
-                  isLight ? 'text-slate-400 hover:text-slate-700' : 'text-[#9C9DA3] hover:text-white'
-                }`}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Current Preview & Reset to Original */}
-            <div className={`flex flex-col items-center justify-center gap-2.5 py-3 rounded-2xl border ${
-              isLight ? 'bg-slate-50 border-slate-200' : 'bg-[#121215] border-[#1E1E21]'
-            }`}>
-              <span className={`text-[10px] uppercase tracking-wider font-semibold ${
-                isLight ? 'text-slate-500' : 'text-[#9C9DA3]'
-              }`}>
-                {isAr ? 'معاينة شعار ناس آب الحالي:' : 'Current Nasapp Brand Logo Preview:'}
-              </span>
-              <div className={`w-20 h-20 rounded-2xl border-2 overflow-hidden flex items-center justify-center p-1 shadow-lg ${
-                isLight ? 'bg-white border-emerald-400 shadow-emerald-500/10' : 'bg-[#000000] border-[#39FFB0]/60 shadow-[#39FFB0]/10'
-              }`}>
-                {storeLogo ? (
-                  <img src={storeLogo} alt="Custom Logo" className="w-full h-full object-contain rounded-xl" />
-                ) : (
-                  <NasappBrandLogo theme={currentTheme} className="w-full h-full" />
-                )}
-              </div>
-
-              {storeLogo && (
-                <button
-                  type="button"
-                  onClick={() => handleSaveLogo(null)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm cursor-pointer border ${
-                    isLight 
-                      ? 'bg-white hover:bg-emerald-50 border-emerald-300 text-emerald-700' 
-                      : 'bg-[#1E1E21] hover:bg-emerald-950/60 border-[#39FFB0]/40 text-[#39FFB0]'
-                  }`}
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>{isAr ? 'استعادة شعار ناس آب الأصلي' : 'Restore Original Vector Logo'}</span>
-                </button>
-              )}
-            </div>
-
-            {/* Method 1: Upload File */}
-            <div className="space-y-2">
-              <label className={`block text-xs font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>
-                {isAr ? '1. رفع صورة الشعار من جهازك (PNG / JPG / SVG):' : '1. Upload Logo Image (PNG / JPG / SVG):'}
-              </label>
-              <input
-                type="file"
-                ref={fileInputRef}
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer border ${
-                  isLight 
-                    ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800' 
-                    : 'bg-[#1A2E24] hover:bg-[#224032] border-[#39FFB0]/40 text-[#39FFB0]'
-                }`}
-              >
-                <Upload className="w-4 h-4" />
-                <span>{isAr ? 'اختيار ملف صورة من الجهاز' : 'Choose Image File'}</span>
-              </button>
-            </div>
-
-            {/* Method 2: Paste Image URL */}
-            <div className={`space-y-2 pt-2 border-t ${isLight ? 'border-slate-200' : 'border-[#1E1E21]'}`}>
-              <label className={`block text-xs font-semibold ${isLight ? 'text-slate-800' : 'text-white'}`}>
-                {isAr ? '2. أو إدخال رابط صورة الشعار (URL):' : '2. Or Paste Image URL:'}
-              </label>
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <LinkIcon className={`w-3.5 h-3.5 absolute left-3 top-3 ${
-                    isLight ? 'text-slate-400' : 'text-[#5E5F64]'
-                  }`} />
-                  <input
-                    type="url"
-                    value={logoInputUrl}
-                    onChange={(e) => setLogoInputUrl(e.target.value)}
-                    placeholder="https://example.com/logo.png"
-                    className={`w-full pl-9 pr-3 py-2 rounded-xl text-xs font-mono outline-none border transition ${
-                      isLight 
-                        ? 'bg-slate-50 border-slate-200 text-slate-900 focus:border-emerald-500 focus:bg-white' 
-                        : 'bg-[#000000] border-[#1E1E21] focus:border-[#39FFB0] text-white'
-                    }`}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (logoInputUrl.trim()) {
-                      handleSaveLogo(logoInputUrl.trim());
-                      setLogoInputUrl('');
-                    }
-                  }}
-                  disabled={!logoInputUrl.trim()}
-                  className={`px-3 py-2 disabled:opacity-30 font-bold rounded-xl text-xs transition cursor-pointer shrink-0 ${
-                    isLight 
-                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
-                      : 'bg-[#39FFB0] text-black'
-                  }`}
-                >
-                  {isAr ? 'حفظ' : 'Apply'}
-                </button>
-              </div>
-            </div>
-
-            {/* Quick Logo Reset */}
-            {storeLogo && (
-              <div className={`pt-2 border-t flex justify-between items-center ${
-                isLight ? 'border-slate-200' : 'border-[#1E1E21]'
-              }`}>
-                <button
-                  type="button"
-                  onClick={() => handleSaveLogo('')}
-                  className="text-xs text-red-500 hover:text-red-600 cursor-pointer font-medium"
-                >
-                  {isAr ? 'إزالة الشعار واستعادة الافتراضي' : 'Reset to Default Logo'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowLogoModal(false)}
-                  className={`px-4 py-1.5 text-xs font-semibold rounded-xl cursor-pointer border ${
-                    isLight 
-                      ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700' 
-                      : 'bg-[#1E1E21] hover:bg-[#2A2A30] border-transparent text-white'
-                  }`}
-                >
-                  {isAr ? 'إغلاق' : 'Close'}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* Customer Lookup Order Modal */}
       {showLookupModal && (
