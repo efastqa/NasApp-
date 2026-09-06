@@ -1,0 +1,206 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Inventory product item in catalogue",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique product ID"
+        },
+        "name": {
+          "type": "string",
+          "description": "Product title or name",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "sku": {
+          "type": "string",
+          "description": "Barcode or SKU identifier",
+          "maxLength": 100
+        },
+        "price": {
+          "type": "number",
+          "description": "Unit price in Qatari Riyal"
+        },
+        "stock": {
+          "type": "number",
+          "description": "Current quantity in stock"
+        },
+        "category": {
+          "type": "string",
+          "description": "Product category",
+          "maxLength": 100
+        },
+        "image": {
+          "type": "string",
+          "description": "Base64 or URL of product image",
+          "maxLength": 500000
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of creation"
+        }
+      },
+      "required": ["id", "name", "price", "stock"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer or staff order",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique order ID"
+        },
+        "timestamp": {
+          "type": "number",
+          "description": "Timestamp in milliseconds"
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Customer full name",
+          "maxLength": 150
+        },
+        "customerPhone": {
+          "type": "string",
+          "description": "Customer phone / WhatsApp",
+          "maxLength": 50
+        },
+        "deliveryMethod": {
+          "type": "string",
+          "description": "Pickup or Delivery",
+          "enum": ["pickup", "delivery"]
+        },
+        "deliveryAddress": {
+          "type": "string",
+          "description": "Delivery address",
+          "maxLength": 500
+        },
+        "items": {
+          "type": "array",
+          "description": "List of ordered items"
+        },
+        "subtotal": {
+          "type": "number",
+          "description": "Subtotal before discount"
+        },
+        "discount": {
+          "type": "object",
+          "description": "Discount object"
+        },
+        "total": {
+          "type": "number",
+          "description": "Final total amount"
+        },
+        "status": {
+          "type": "string",
+          "description": "Current order progression state",
+          "enum": ["pending", "confirmed", "preparing", "ready", "completed", "cancelled"]
+        },
+        "source": {
+          "type": "string",
+          "description": "Order origin",
+          "enum": ["pos", "customer", "staff"]
+        },
+        "channel": {
+          "type": "string",
+          "description": "In-person or Online",
+          "enum": ["instore", "online"]
+        },
+        "statusHistory": {
+          "type": "array",
+          "description": "Audit history of status changes"
+        }
+      },
+      "required": ["id", "timestamp", "items", "total", "status"]
+    },
+    "Sale": {
+      "title": "Sale",
+      "description": "Completed transaction ledger record",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique sale ID"
+        },
+        "timestamp": {
+          "type": "number",
+          "description": "Timestamp in milliseconds"
+        },
+        "channel": {
+          "type": "string",
+          "description": "In-person or Online",
+          "enum": ["instore", "online"]
+        },
+        "customerPhone": {
+          "type": "string",
+          "description": "Customer phone / WhatsApp",
+          "maxLength": 50
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Customer name",
+          "maxLength": 150
+        },
+        "deliveryMethod": {
+          "type": "string",
+          "description": "Pickup or Delivery"
+        },
+        "deliveryAddress": {
+          "type": "string",
+          "description": "Delivery address",
+          "maxLength": 500
+        },
+        "items": {
+          "type": "array",
+          "description": "List of sold items"
+        },
+        "subtotal": {
+          "type": "number",
+          "description": "Subtotal"
+        },
+        "discount": {
+          "type": "object",
+          "description": "Discount applied"
+        },
+        "total": {
+          "type": "number",
+          "description": "Final paid amount"
+        },
+        "status": {
+          "type": "string",
+          "description": "Transaction status",
+          "enum": ["completed"]
+        },
+        "source": {
+          "type": "string",
+          "description": "Sale source",
+          "enum": ["pos", "customer", "staff"]
+        }
+      },
+      "required": ["id", "timestamp", "items", "total", "status"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": {
+        "$ref": "#/entities/Product"
+      },
+      "description": "Collection of catalogue products with price and stock levels"
+    },
+    "/orders/{orderId}": {
+      "schema": {
+        "$ref": "#/entities/Order"
+      },
+      "description": "Live collection of customer and staff orders"
+    },
+    "/sales/{saleId}": {
+      "schema": {
+        "$ref": "#/entities/Sale"
+      },
+      "description": "Historical sales ledger collection"
+    }
+  }
+}

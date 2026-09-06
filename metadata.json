@@ -1,0 +1,6 @@
+{
+  "name": "Live Web & Backend App Studio",
+  "description": "Interactive workspace to run HTML code, integrate Express backend APIs, test endpoints, and deploy live fullstack web applications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

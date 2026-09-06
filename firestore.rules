@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    // Product validation helper
+    function isValidProduct(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 200
+        && (data.price is number || data.price is int) && data.price >= 0
+        && (data.stock is number || data.stock is int) && data.stock >= 0;
+    }
+
+    // Test connection doc for initial health check
+    match /test/{testId} {
+      allow read, write: if true;
+    }
+
+    // 1. Products Collection (Open read for POS register & customer QR menu)
+    match /products/{productId} {
+      allow get, list: if true;
+      allow create, update, delete: if true;
+    }
+
+    // 2. Orders Collection (Live pipeline & customer orders)
+    match /orders/{orderId} {
+      allow get, list: if true;
+      allow create, update, delete: if true;
+    }
+
+    // 3. Sales Collection (Transactions and receipts)
+    match /sales/{saleId} {
+      allow get, list: if true;
+      allow create, update, delete: if true;
+    }
+
+  }
+}
