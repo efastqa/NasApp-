@@ -146,7 +146,7 @@
         },
         "deliveryMethod": {
           "type": "string",
-          "description": "Pickup or Delivery"
+          "description": "Pickup, Delivery, or Dine In"
         },
         "deliveryAddress": {
           "type": "string",
@@ -181,6 +181,40 @@
         }
       },
       "required": ["id", "timestamp", "items", "total", "status"]
+    },
+    "DiningTable": {
+      "title": "DiningTable",
+      "description": "Restaurant dining table status and seating",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique table ID"
+        },
+        "number": {
+          "type": "string",
+          "description": "Table display code / number"
+        },
+        "name": {
+          "type": "string",
+          "description": "Table name"
+        },
+        "section": {
+          "type": "string",
+          "description": "Floor section",
+          "enum": ["main_hall", "terrace", "vip_majlis", "outdoor"]
+        },
+        "capacity": {
+          "type": "number",
+          "description": "Guest seating capacity"
+        },
+        "status": {
+          "type": "string",
+          "description": "Table occupancy status",
+          "enum": ["available", "occupied", "reserved", "billing"]
+        }
+      },
+      "required": ["id", "number", "status"]
     }
   },
   "firestore": {
@@ -201,6 +235,12 @@
         "$ref": "#/entities/Sale"
       },
       "description": "Historical sales ledger collection"
+    },
+    "/tables/{tableId}": {
+      "schema": {
+        "$ref": "#/entities/DiningTable"
+      },
+      "description": "Dining tables seating and floor management collection"
     }
   }
 }

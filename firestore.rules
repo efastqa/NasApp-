@@ -8,38 +8,89 @@ service cloud.firestore {
       return id is string && id.size() > 0 && id.size() <= 128;
     }
 
-    function incoming() {
-      return request.resource.data;
-    }
-
     // Product validation helper
     function isValidProduct(data) {
-      return data.name is string && data.name.size() > 0 && data.name.size() <= 200
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128))
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 200
         && (data.price is number || data.price is int) && data.price >= 0
-        && (data.stock is number || data.stock is int) && data.stock >= 0;
+        && (data.stock is number || data.stock is int) && data.stock >= 0
+        && (!('category' in data) || (data.category is string && data.category.size() <= 100))
+        && (!('sku' in data) || (data.sku is string && data.sku.size() <= 100));
     }
 
-    // Test connection doc for initial health check
+    // Order validation helper
+    function isValidOrder(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128))
+        && data.items is list && data.items.size() > 0 && data.items.size() <= 100
+        && (data.total is number || data.total is int) && data.total >= 0
+        && data.status is string && data.status in ['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled']
+        && (!('customerName' in data) || (data.customerName is string && data.customerName.size() <= 150))
+        && (!('customerPhone' in data) || (data.customerPhone is string && data.customerPhone.size() <= 50));
+    }
+
+    // Sale validation helper (Financial transaction record)
+    function isValidSale(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128))
+        && data.items is list && data.items.size() > 0 && data.items.size() <= 200
+        && (data.total is number || data.total is int) && data.total >= 0
+        && data.status == 'completed'
+        && (data.timestamp is number || data.timestamp is int);
+    }
+
+    // Dining table validation helper
+    function isValidTable(data) {
+      return (!('id' in data) || (data.id is string && data.id.size() <= 128))
+        && (!('status' in data) || (data.status in ['available', 'occupied', 'reserved', 'billing']));
+    }
+
+    // Health check read-only doc
     match /test/{testId} {
-      allow read, write: if true;
+      allow get: if true;
+      allow list, write: if false;
     }
 
-    // 1. Products Collection (Open read for POS register & customer QR menu)
+    // 1. Products Collection (Catalog)
+    // Open read for POS register & customer menu.
+    // Create/update require valid ID and strict product schema validation.
+    // Deletions require valid document ID.
     match /products/{productId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create, update: if isValidId(productId) && isValidProduct(request.resource.data);
+      allow delete: if isValidId(productId);
     }
 
-    // 2. Orders Collection (Live pipeline & customer orders)
+    // 2. Orders Collection (Customer & POS Orders)
+    // Open read for order tracking and kitchen display systems.
+    // Orders must validate items, positive total, and progression status.
+    // Deletion is blocked to prevent loss of audit history.
     match /orders/{orderId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create: if isValidId(orderId) && isValidOrder(request.resource.data);
+      allow update: if isValidId(orderId) && isValidOrder(request.resource.data);
+      allow delete: if false;
     }
 
-    // 3. Sales Collection (Transactions and receipts)
+    // 3. Sales Collection (Immutable Financial Ledger)
+    // Reading permitted for reports and receipt lookups.
+    // Writes must validate full transaction structure.
+    // Updating and deleting sales is strictly forbidden to prevent financial tampering and audit fraud.
     match /sales/{saleId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create: if isValidId(saleId) && isValidSale(request.resource.data);
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // 4. Dining Tables Collection
+    match /tables/{tableId} {
+      allow get, list: if true;
+      allow create, update: if isValidId(tableId) && isValidTable(request.resource.data);
+      allow delete: if false;
+    }
+
+    // Default deny for all other collections
+    match /{document=**} {
+      allow read, write: if false;
     }
 
   }
