@@ -276,10 +276,27 @@ export const App: React.FC = () => {
       }
     );
 
+    // 4. Real-time Tables listener
+    const unsubTables = onSnapshot(
+      collection(db, 'tables'),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const list: DiningTable[] = [];
+          snapshot.forEach((d) => list.push(d.data() as DiningTable));
+          list.sort((a, b) => a.number.localeCompare(b.number));
+          setTables(list);
+        }
+      },
+      (error) => {
+        console.warn('Tables Firestore snapshot note:', error);
+      }
+    );
+
     return () => {
       unsubProducts();
       unsubOrders();
       unsubSales();
+      unsubTables();
     };
   }, []);
 
@@ -486,34 +503,62 @@ export const App: React.FC = () => {
       const newOrder: Order = {
         id: orderId,
         timestamp: Date.now(),
-        customerName: orderPayload.customerName || 'Valued Customer',
+        customerName: orderPayload.customerName || (orderPayload.tableNumber ? `Table ${orderPayload.tableNumber} Guest` : 'Valued Customer'),
         customerPhone: orderPayload.customerPhone || '',
-        deliveryMethod: orderPayload.deliveryMethod || 'pickup',
-        deliveryAddress: orderPayload.deliveryAddress || '',
+        deliveryMethod: orderPayload.deliveryMethod || (orderPayload.tableNumber ? 'dine_in' : 'pickup'),
+        deliveryAddress: orderPayload.deliveryAddress || (orderPayload.tableNumber ? `Dine-In Table ${orderPayload.tableNumber}` : ''),
+        tableId: orderPayload.tableId || orderPayload.tableNumber || undefined,
+        tableName: orderPayload.tableName || (orderPayload.tableNumber ? `Table ${orderPayload.tableNumber}` : undefined),
+        tableNumber: orderPayload.tableNumber || undefined,
         items: orderPayload.items || [],
-        subtotal: orderPayload.subtotal || 0,
+        subtotal: Number(orderPayload.subtotal) || 0,
         discount: orderPayload.discount || { type: 'fixed', value: 0, amount: 0 },
-        total: orderPayload.total || 0,
+        total: Number(orderPayload.total) || 0,
         status: 'pending',
         source: orderPayload.source || 'customer',
         channel: orderPayload.channel || 'online',
         statusHistory: [
-          { status: 'pending', timestamp: new Date().toISOString(), note: 'Order submitted' }
+          { status: 'pending', timestamp: new Date().toISOString(), note: orderPayload.tableNumber ? `Order submitted from Table ${orderPayload.tableNumber}` : 'Order submitted' }
         ]
       };
 
+      // Strip any undefined keys to prevent Firestore SDK validation exceptions
+      const cleanOrder: Order = JSON.parse(JSON.stringify(newOrder));
+
       // 1. Instantly update React state
-      setOrders(prev => [newOrder, ...prev.filter(o => o.id !== orderId)]);
+      setOrders(prev => [cleanOrder, ...prev.filter(o => o.id !== orderId)]);
 
       // 2. Persist to Firestore
       try {
-        await setDoc(doc(db, 'orders', orderId), newOrder);
+        await setDoc(doc(db, 'orders', orderId), cleanOrder);
+        console.log('Order successfully synced to Firestore:', orderId);
       } catch (fErr) {
-        console.warn('Firestore setDoc orders note:', fErr);
+        console.error('Firestore setDoc orders note:', fErr);
+      }
+
+      // 3. If this was a table order, update table status and link order
+      const tblNum = orderPayload.tableNumber || orderPayload.tableId;
+      if (tblNum) {
+        const matchedTable = tables.find(t => t.number === tblNum || t.id === tblNum);
+        if (matchedTable) {
+          const tableUpdates: Partial<DiningTable> = {
+            status: 'occupied',
+            activeOrderId: orderId,
+            currentTotal: cleanOrder.total,
+            customerName: cleanOrder.customerName,
+            openedAt: Date.now()
+          };
+          setTables(prev => prev.map(t => t.id === matchedTable.id ? { ...t, ...tableUpdates } : t));
+          try {
+            await setDoc(doc(db, 'tables', matchedTable.id), JSON.parse(JSON.stringify(tableUpdates)), { merge: true });
+          } catch (tErr) {
+            console.warn('Table update error:', tErr);
+          }
+        }
       }
 
       showToast(isAr ? `✓ تم استلام الطلب #${orderId}` : `✓ Order #${orderId} received!`);
-      return newOrder;
+      return cleanOrder;
     } catch (error) {
       console.error('Error creating order:', error);
       return null;

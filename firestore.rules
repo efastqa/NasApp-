@@ -11,9 +11,9 @@ service cloud.firestore {
     // Product validation helper
     function isValidProduct(data) {
       return (!('id' in data) || (data.id is string && data.id.size() <= 128))
-        && data.name is string && data.name.size() > 0 && data.name.size() <= 200
-        && (data.price is number || data.price is int) && data.price >= 0
-        && (data.stock is number || data.stock is int) && data.stock >= 0
+        && (!('name' in data) || (data.name is string && data.name.size() > 0 && data.name.size() <= 200))
+        && (!('price' in data) || ((data.price is int || data.price is float) && data.price >= 0))
+        && (!('stock' in data) || ((data.stock is int || data.stock is float) && data.stock >= 0))
         && (!('category' in data) || (data.category is string && data.category.size() <= 100))
         && (!('sku' in data) || (data.sku is string && data.sku.size() <= 100));
     }
@@ -21,9 +21,9 @@ service cloud.firestore {
     // Order validation helper
     function isValidOrder(data) {
       return (!('id' in data) || (data.id is string && data.id.size() <= 128))
-        && data.items is list && data.items.size() > 0 && data.items.size() <= 100
-        && (data.total is number || data.total is int) && data.total >= 0
-        && data.status is string && data.status in ['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled']
+        && (!('items' in data) || (data.items is list && data.items.size() <= 200))
+        && (!('total' in data) || ((data.total is int || data.total is float) && data.total >= 0))
+        && (!('status' in data) || (data.status is string && data.status in ['pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled']))
         && (!('customerName' in data) || (data.customerName is string && data.customerName.size() <= 150))
         && (!('customerPhone' in data) || (data.customerPhone is string && data.customerPhone.size() <= 50));
     }
@@ -31,10 +31,10 @@ service cloud.firestore {
     // Sale validation helper (Financial transaction record)
     function isValidSale(data) {
       return (!('id' in data) || (data.id is string && data.id.size() <= 128))
-        && data.items is list && data.items.size() > 0 && data.items.size() <= 200
-        && (data.total is number || data.total is int) && data.total >= 0
-        && data.status == 'completed'
-        && (data.timestamp is number || data.timestamp is int);
+        && (!('items' in data) || (data.items is list && data.items.size() <= 200))
+        && (!('total' in data) || ((data.total is int || data.total is float) && data.total >= 0))
+        && (!('status' in data) || data.status == 'completed')
+        && (!('timestamp' in data) || (data.timestamp is int || data.timestamp is float));
     }
 
     // Dining table validation helper

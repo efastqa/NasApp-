@@ -71,6 +71,7 @@ export interface Order {
   deliveryAddress?: string;
   tableId?: string;
   tableName?: string;
+  tableNumber?: string;
   guestsCount?: number;
   items: CartItem[];
   subtotal: number;

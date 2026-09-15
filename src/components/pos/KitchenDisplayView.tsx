@@ -276,10 +276,17 @@ export const KitchenDisplayView: React.FC<KitchenDisplayViewProps> = ({
 
                 {/* Customer & Source Info */}
                 <div className="px-3.5 py-2 bg-[#0A0A0B] border-b border-[#1E1E21]/60 flex items-center justify-between text-[11px] text-[#9C9DA3]">
-                  <span className="font-medium text-[#F5F5F4] truncate max-w-[150px]">
-                    {order.customerName || 'Walk-in'}
-                  </span>
-                  <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[#151517]">
+                  <div className="flex items-center gap-1.5 truncate max-w-[200px]">
+                    <span className="font-medium text-[#F5F5F4] truncate">
+                      {order.customerName || 'Walk-in'}
+                    </span>
+                    {(order.tableNumber || order.tableName || order.tableId) && (
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[10px] shrink-0 font-mono">
+                        🍽️ {order.tableName || `Table ${order.tableNumber || order.tableId}`}
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-[#151517] shrink-0">
                     {order.channel === 'online' ? (isAr ? '🌐 أونلاين' : '🌐 Online') : (isAr ? '💻 كاشير' : '💻 POS')}
                   </span>
                 </div>

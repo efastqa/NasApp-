@@ -70,13 +70,25 @@
         },
         "deliveryMethod": {
           "type": "string",
-          "description": "Pickup or Delivery",
-          "enum": ["pickup", "delivery"]
+          "description": "Pickup, Delivery, or Dine In",
+          "enum": ["pickup", "delivery", "dine_in"]
         },
         "deliveryAddress": {
           "type": "string",
           "description": "Delivery address",
           "maxLength": 500
+        },
+        "tableId": {
+          "type": "string",
+          "description": "Table ID if dine-in"
+        },
+        "tableName": {
+          "type": "string",
+          "description": "Table display name if dine-in"
+        },
+        "tableNumber": {
+          "type": "string",
+          "description": "Table number code (e.g. T-01)"
         },
         "items": {
           "type": "array",

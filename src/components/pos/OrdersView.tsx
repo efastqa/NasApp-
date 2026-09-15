@@ -473,6 +473,12 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
                     }`}>
                       {order.channel === 'online' ? 'ONLINE (QR)' : 'POS STAFF'}
                     </span>
+                    {(order.tableNumber || order.tableName || order.tableId) && (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                        <span>🍽️</span>
+                        <span>{order.tableName || `Table ${order.tableNumber || order.tableId}`}</span>
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center justify-between sm:justify-end gap-3">
@@ -509,7 +515,9 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
                   <span>
                     {order.deliveryMethod === 'delivery' 
                       ? (isAr ? `🚚 توصيل: ${order.deliveryAddress || 'عنوان العميل'}` : `🚚 Delivery: ${order.deliveryAddress || 'Customer Address'}`) 
-                      : (isAr ? '🏬 استلام من المتجر' : '🏬 Pickup in-store')}
+                      : (order.deliveryMethod === 'dine_in' || order.tableNumber || order.tableId
+                        ? (isAr ? `🍽️ تناول بالمطعم: ${order.tableName || `طاولة ${order.tableNumber || order.tableId}`}` : `🍽️ Dine-in: ${order.tableName || `Table ${order.tableNumber || order.tableId}`}`)
+                        : (isAr ? '🏬 استلام من المتجر' : '🏬 Pickup in-store'))}
                   </span>
                 </div>
 
