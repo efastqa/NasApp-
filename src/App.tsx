@@ -21,7 +21,15 @@ import {
   Sun,
   Moon,
   Smartphone,
-  Store
+  Tablet,
+  Monitor,
+  Store,
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Radio,
+  SlidersHorizontal
 } from 'lucide-react';
 import { useTheme } from './ThemeContext';
 import { Product, Order, Sale, DashboardStats, DiningTable, CashShift } from './types';
@@ -43,6 +51,8 @@ import { OfflineIndicator } from './components/pwa/OfflineIndicator';
 import { AdminLockScreen } from './components/pos/AdminLockScreen';
 import { AdminSettingsModal } from './components/pos/AdminSettingsModal';
 import { NasappBrandLogo } from './components/NasappBrandLogo';
+import { DevicePreviewBar, DeviceMode, DeviceOrientation } from './components/DevicePreviewBar';
+import { DeviceSimulatorFrame } from './components/DeviceSimulatorFrame';
 
 // Developer Tools components
 import { BackendInspector } from './components/BackendInspector';
@@ -131,6 +141,63 @@ export const App: React.FC = () => {
   const [cloudConnected, setCloudConnected] = useState<boolean>(false);
   const [lastPrintSale, setLastPrintSale] = useState<Sale | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Device Setup (Mobile / Tab / Web) & Responsive Layout
+  const [deviceMode, setDeviceMode] = useState<DeviceMode>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const urlDev = params.get('device') as DeviceMode;
+      if (urlDev && ['auto', 'mobile', 'tab', 'web'].includes(urlDev)) return urlDev;
+      const saved = localStorage.getItem('nasapp_device_mode') as DeviceMode;
+      return (saved && ['auto', 'mobile', 'tab', 'web'].includes(saved)) ? saved : 'auto';
+    } catch {
+      return 'auto';
+    }
+  });
+
+  const [deviceOrientation, setDeviceOrientation] = useState<DeviceOrientation>('portrait');
+  const [minimizedToolbar, setMinimizedToolbar] = useState<boolean>(false);
+  const [mobileDrawerOpen, setMobileDrawerOpen] = useState<boolean>(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+
+  const handleDeviceModeChange = (mode: DeviceMode) => {
+    setDeviceMode(mode);
+    try {
+      localStorage.setItem('nasapp_device_mode', mode);
+    } catch {}
+    showToast(isAr ? `✓ تم تغيير العرض إلى: ${mode}` : `✓ Switched preview to: ${mode.toUpperCase()}`);
+  };
+
+  const handleToggleOrientation = () => {
+    setDeviceOrientation(prev => prev === 'portrait' ? 'landscape' : 'portrait');
+  };
+
+  // Audio chime & notification on incoming live orders via Firestore
+  const prevOrdersCountRef = React.useRef<number>(orders.length);
+  useEffect(() => {
+    if (orders.length > prevOrdersCountRef.current && prevOrdersCountRef.current > 0) {
+      const latestOrder = orders[0];
+      showToast(isAr ? `🔔 طلب جديد وارد: #${latestOrder.id} (${latestOrder.total.toFixed(2)} ر.ق)` : `🔔 New Live Order: #${latestOrder.id} (QR ${latestOrder.total.toFixed(2)})`);
+      try {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioCtx) {
+          const ctx = new AudioCtx();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+          osc.frequency.setValueAtTime(880, ctx.currentTime + 0.15);
+          gain.gain.setValueAtTime(0.18, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+          osc.start();
+          osc.stop(ctx.currentTime + 0.4);
+        }
+      } catch {}
+    }
+    prevOrdersCountRef.current = orders.length;
+  }, [orders.length, isAr]);
 
   // Store Custom Logo state (null defaults to the original Nasapp vector mark)
   const [storeLogo, setStoreLogo] = useState<string | null>(() => {
@@ -494,6 +561,8 @@ export const App: React.FC = () => {
         customerPhone: orderPayload.customerPhone || '',
         deliveryMethod: orderPayload.deliveryMethod || (orderPayload.tableNumber ? 'dine_in' : 'pickup'),
         deliveryAddress: orderPayload.deliveryAddress || (orderPayload.tableNumber ? `Dine-In Table ${orderPayload.tableNumber}` : ''),
+        paymentMethod: orderPayload.paymentMethod || undefined,
+        paymentReference: orderPayload.paymentReference || undefined,
         tableId: orderPayload.tableId || orderPayload.tableNumber || undefined,
         tableName: orderPayload.tableName || (orderPayload.tableNumber ? `Table ${orderPayload.tableNumber}` : undefined),
         tableNumber: orderPayload.tableNumber || undefined,
@@ -673,69 +742,123 @@ export const App: React.FC = () => {
     }, 150);
   };
 
+  // Pending orders count for real-time live alerts and badges
+  const pendingOrdersCount = orders.filter(o => o.status === 'pending').length;
+
   // Switch to standalone Customer Self-Order view (Default for all website & mobile visitors)
   if (customerMode) {
     return (
-      <CustomerOrderView
-        products={products}
-        orders={orders}
-        onSubmitOrder={handleCustomerSubmitOrder}
-        onOpenAdminAccess={() => {
-          setCustomerMode(false);
-        }}
-        onExitCustomerMode={() => {
-          setCustomerMode(false);
-        }}
-        lang={lang}
-        onToggleLang={toggleLang}
-        storeLogo={storeLogo}
-        onUpdateStoreLogo={handleUpdateStoreLogo}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-      />
+      <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${
+        isLight ? 'bg-slate-50 text-slate-800' : 'bg-[#04060C] text-[#F5F5F4]'
+      }`}>
+        <DevicePreviewBar
+          deviceMode={deviceMode}
+          onDeviceModeChange={handleDeviceModeChange}
+          orientation={deviceOrientation}
+          onToggleOrientation={handleToggleOrientation}
+          customerMode={customerMode}
+          onToggleCustomerMode={() => setCustomerMode(false)}
+          lang={lang}
+          onToggleLang={toggleLang}
+          cloudConnected={cloudConnected}
+          minimized={minimizedToolbar}
+          onToggleMinimize={() => setMinimizedToolbar(prev => !prev)}
+          pendingOrdersCount={pendingOrdersCount}
+        />
+        <DeviceSimulatorFrame
+          deviceMode={deviceMode}
+          orientation={deviceOrientation}
+          onToggleOrientation={handleToggleOrientation}
+          isLight={isLight}
+        >
+          <CustomerOrderView
+            products={products}
+            orders={orders}
+            onSubmitOrder={handleCustomerSubmitOrder}
+            onOpenAdminAccess={() => {
+              setCustomerMode(false);
+            }}
+            onExitCustomerMode={() => {
+              setCustomerMode(false);
+            }}
+            lang={lang}
+            onToggleLang={toggleLang}
+            storeLogo={storeLogo}
+            onUpdateStoreLogo={handleUpdateStoreLogo}
+            theme={theme}
+            onToggleTheme={toggleTheme}
+          />
+        </DeviceSimulatorFrame>
+      </div>
     );
   }
 
   // Admin PIN / Password Lock Screen Protection
   if (!isAdminUnlocked) {
     return (
-      <AdminLockScreen
-        onUnlock={handleUnlockAdmin}
-        lang={lang}
-        onToggleLang={toggleLang}
-        onOpenCustomerView={() => setCustomerMode(true)}
-        storeLogo={storeLogo}
-        theme={theme}
-        onToggleTheme={toggleTheme}
-      />
+      <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${
+        isLight ? 'bg-slate-50 text-slate-800' : 'bg-[#04060C] text-[#F5F5F4]'
+      }`}>
+        <DevicePreviewBar
+          deviceMode={deviceMode}
+          onDeviceModeChange={handleDeviceModeChange}
+          orientation={deviceOrientation}
+          onToggleOrientation={handleToggleOrientation}
+          customerMode={customerMode}
+          onToggleCustomerMode={() => setCustomerMode(true)}
+          lang={lang}
+          onToggleLang={toggleLang}
+          cloudConnected={cloudConnected}
+          minimized={minimizedToolbar}
+          onToggleMinimize={() => setMinimizedToolbar(prev => !prev)}
+          pendingOrdersCount={pendingOrdersCount}
+        />
+        <DeviceSimulatorFrame
+          deviceMode={deviceMode}
+          orientation={deviceOrientation}
+          onToggleOrientation={handleToggleOrientation}
+          isLight={isLight}
+        >
+          <AdminLockScreen
+            onUnlock={handleUnlockAdmin}
+            lang={lang}
+            onToggleLang={toggleLang}
+            onOpenCustomerView={() => setCustomerMode(true)}
+            storeLogo={storeLogo}
+            theme={theme}
+            onToggleTheme={toggleTheme}
+          />
+        </DeviceSimulatorFrame>
+      </div>
     );
   }
 
-  const pendingOrdersCount = orders.filter(o => o.status === 'pending').length;
+  const navItems = [
+    { id: 'register' as const, num: '01', icon: ShoppingBag, label: t.register, count: 0, pill: null, dot: null },
+    { id: 'inventory' as const, num: '02', icon: Package, label: t.inventory, count: products.length, pill: null, dot: null },
+    { id: 'shifts' as const, num: '03', icon: Banknote, label: t.shifts, count: 0, pill: null, dot: shift.status === 'open' ? 'bg-[#39FFB0]' : 'bg-red-500' },
+    { id: 'orders' as const, num: '04', icon: ClipboardList, label: t.orders, count: pendingOrdersCount, pill: null, dot: null, badgeColor: 'bg-[#FFB039] text-[#000000]' },
+    { id: 'sales' as const, num: '05', icon: History, label: t.sales, count: sales.length, pill: null, dot: null },
+    { id: 'dashboard' as const, num: '06', icon: BarChart3, label: t.dashboard, count: 0, pill: null, dot: null },
+    { id: 'qr' as const, num: '07', icon: QrCode, label: t.qrCode, count: 0, pill: null, dot: null },
+    { id: 'labels' as const, num: '08', icon: Tag, label: t.barcodeLabels, count: 0, pill: 'PRINT', dot: null },
+    { id: 'app_creation' as const, num: '09', icon: Smartphone, label: t.appCreation, count: 0, pill: 'APP', dot: null },
+    { id: 'dev_workbench' as const, num: '10', icon: Terminal, label: t.devWorkbench, count: 0, pill: 'REST', dot: null },
+  ];
 
-  return (
-    <div dir={isAr ? 'rtl' : 'ltr'} className={`flex h-screen overflow-hidden font-sans transition-colors duration-200 ${isLight ? 'bg-slate-100 text-slate-800' : 'bg-[#000000] text-[#F5F5F4]'}`}>
-      
-      {/* Toast Notification Popup */}
-      {toastMessage && (
-        <div className={`fixed top-4 ${isAr ? 'left-4' : 'right-4'} z-50 border px-4 py-2.5 rounded-xl shadow-2xl text-xs font-bold animate-in fade-in slide-in-from-top-2 flex items-center gap-2 ${
-          isLight ? 'bg-white border-emerald-500 text-emerald-800 shadow-emerald-500/10' : 'bg-[#0A0A0B] border-[#39FFB0] text-[#39FFB0]'
-        }`}>
-          <span className={`w-2 h-2 rounded-full animate-ping ${isLight ? 'bg-emerald-600' : 'bg-[#39FFB0]'}`}></span>
-          <span>{toastMessage}</span>
-        </div>
-      )}
+  // Helper to render sidebar items (used for both desktop/tablet sidebar and mobile slide drawer)
+  const renderSidebarContent = (isDrawer: boolean = false) => {
+    const isCollapsed = !isDrawer && sidebarCollapsed;
 
-      {/* Main Sidebar */}
-      <aside className={`w-64 flex flex-col justify-between p-4 shrink-0 overflow-y-auto transition-colors duration-200 ${
-        isLight ? 'bg-white border-r border-slate-200' : 'bg-[#0A0A0B] border-r border-[#1E1E21]'
-      }`}>
-        
-        <div className="space-y-4">
+    return (
+      <div className="flex flex-col h-full justify-between select-none">
+        <div className="space-y-3">
           
-          {/* Brand Logo & Title */}
-          <div className={`flex items-center justify-between pb-3 border-b ${isLight ? 'border-slate-100' : 'border-[#1E1E21]/80'}`}>
-            <div className="flex items-center gap-3">
+          {/* Brand Logo & Title + Tablet Collapse Toggle */}
+          <div className={`flex items-center justify-between pb-3 border-b ${
+            isLight ? 'border-slate-100' : 'border-[#1E1E21]/80'
+          }`}>
+            <div className={`flex items-center ${isCollapsed ? 'justify-center w-full' : 'gap-2.5'}`}>
               {storeLogo ? (
                 <div className={`w-8 h-8 rounded-xl border overflow-hidden flex items-center justify-center p-0.5 shrink-0 shadow-sm ${
                   isLight ? 'bg-white border-slate-200' : 'bg-black border-[#39FFB0]/40'
@@ -745,84 +868,146 @@ export const App: React.FC = () => {
               ) : (
                 <NasappBrandLogo theme={theme} className="w-8 h-8" />
               )}
-              <div>
-                <h1 className={`font-display font-bold text-sm leading-tight ${isLight ? 'text-slate-900' : 'text-[#F5F5F4]'}`}>
-                  {t.brandName}
-                </h1>
-                <p className={`font-mono text-[9px] uppercase tracking-wider mt-0.5 ${isLight ? 'text-slate-500' : 'text-[#5E5F64]'}`}>
-                  {t.brandSubtitle}
-                </p>
-              </div>
+              
+              {!isCollapsed && (
+                <div className="overflow-hidden">
+                  <h1 className={`font-display font-bold text-sm leading-tight truncate ${isLight ? 'text-slate-900' : 'text-[#F5F5F4]'}`}>
+                    {t.brandName}
+                  </h1>
+                  <p className={`font-mono text-[9px] uppercase tracking-wider truncate ${isLight ? 'text-slate-500' : 'text-[#5E5F64]'}`}>
+                    {t.brandSubtitle}
+                  </p>
+                </div>
+              )}
             </div>
 
-            <PWAInstallButton lang={lang} variant="header" />
+            {/* Collapse toggle button on tablet */}
+            {!isDrawer && (
+              <button
+                type="button"
+                onClick={() => setSidebarCollapsed(prev => !prev)}
+                className="hidden lg:flex p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
+                title={sidebarCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+              >
+                {sidebarCollapsed 
+                  ? (isAr ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />) 
+                  : (isAr ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />)}
+              </button>
+            )}
+
+            {isDrawer && (
+              <button
+                type="button"
+                onClick={() => setMobileDrawerOpen(false)}
+                className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition cursor-pointer"
+                title="Close Drawer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
 
           {/* Quick Switch to Customer Store Menu */}
-          <button
-            onClick={() => setCustomerMode(true)}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer border shadow-sm ${
-              isLight
-                ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800'
-                : 'bg-[#151517] hover:bg-[#1E1E21] border-[#39FFB0]/40 text-[#39FFB0]'
-            }`}
-            title={isAr ? 'عرض وتصفح متجر العملاء' : 'Switch to Customer Store Menu'}
-          >
-            <div className="flex items-center gap-2">
-              <Store className="w-4 h-4 text-emerald-600 dark:text-[#39FFB0]" />
-              <span>{isAr ? 'قائمة متجر العملاء' : 'Customer Menu'}</span>
-            </div>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 font-bold">
-              LIVE
-            </span>
-          </button>
-
-          {/* Bilingual Language Switcher & Modern Theme Switcher */}
-          <div className="grid grid-cols-2 gap-2">
+          {!isCollapsed ? (
             <button
-              onClick={toggleLang}
-              className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-bold transition cursor-pointer border shadow-sm ${
+              onClick={() => {
+                setCustomerMode(true);
+                if (isDrawer) setMobileDrawerOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer border shadow-sm ${
                 isLight
-                  ? 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+                  ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800'
                   : 'bg-[#151517] hover:bg-[#1E1E21] border-[#39FFB0]/40 text-[#39FFB0]'
               }`}
-              title="Switch Language (English / العربية)"
+              title={isAr ? 'عرض وتصفح متجر العملاء' : 'Switch to Customer Store Menu'}
             >
-              <Globe className="w-3.5 h-3.5" />
-              <span>{isAr ? 'English' : 'العربية'}</span>
+              <div className="flex items-center gap-2">
+                <Store className="w-4 h-4 text-emerald-600 dark:text-[#39FFB0]" />
+                <span className="truncate">{isAr ? 'قائمة متجر العملاء' : 'Customer Menu'}</span>
+              </div>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 font-bold">
+                LIVE
+              </span>
             </button>
-
+          ) : (
             <button
-              onClick={toggleTheme}
-              className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-bold transition cursor-pointer border shadow-sm ${
-                isLight
-                  ? 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
-                  : 'bg-[#151517] hover:bg-[#1E1E21] border-[#1E1E21] text-amber-300'
-              }`}
-              title={isAr ? 'تغيير المظهر (فاتح / داكن)' : 'Toggle Light / Dark Theme'}
+              onClick={() => setCustomerMode(true)}
+              className="w-full flex items-center justify-center p-2 rounded-xl text-xs font-bold transition cursor-pointer border border-[#39FFB0]/40 text-[#39FFB0] bg-[#151517]"
+              title="Customer Menu"
             >
-              {isLight ? (
-                <>
-                  <Moon className="w-3.5 h-3.5 text-slate-600" />
-                  <span>{isAr ? 'داكن' : 'Dark'}</span>
-                </>
-              ) : (
-                <>
-                  <Sun className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{isAr ? 'فاتح' : 'Light'}</span>
-                </>
-              )}
+              <Store className="w-4 h-4" />
             </button>
-          </div>
+          )}
+
+          {/* Bilingual Language Switcher & Theme Switcher */}
+          {!isCollapsed ? (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={toggleLang}
+                className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-bold transition cursor-pointer border shadow-sm ${
+                  isLight
+                    ? 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+                    : 'bg-[#151517] hover:bg-[#1E1E21] border-[#39FFB0]/40 text-[#39FFB0]'
+                }`}
+                title="Switch Language"
+              >
+                <Globe className="w-3.5 h-3.5" />
+                <span>{isAr ? 'English' : 'العربية'}</span>
+              </button>
+
+              <button
+                onClick={toggleTheme}
+                className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-bold transition cursor-pointer border shadow-sm ${
+                  isLight
+                    ? 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+                    : 'bg-[#151517] hover:bg-[#1E1E21] border-[#1E1E21] text-amber-300'
+                }`}
+                title="Toggle Theme"
+              >
+                {isLight ? (
+                  <>
+                    <Moon className="w-3.5 h-3.5 text-slate-600" />
+                    <span>{isAr ? 'داكن' : 'Dark'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Sun className="w-3.5 h-3.5 text-amber-400" />
+                    <span>{isAr ? 'فاتح' : 'Light'}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5 items-center">
+              <button
+                onClick={toggleLang}
+                className="p-2 rounded-lg bg-slate-800 text-slate-300 text-xs font-bold"
+                title="Toggle Language"
+              >
+                {lang === 'en' ? 'AR' : 'EN'}
+              </button>
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg bg-slate-800 text-amber-400"
+                title="Toggle Theme"
+              >
+                {isLight ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              </button>
+            </div>
+          )}
 
           {/* Quick Scan Code / Barcode Button */}
           <button
-            onClick={() => setGlobalScannerOpen(true)}
-            className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs font-bold transition cursor-pointer shadow-md group ${
+            onClick={() => {
+              setGlobalScannerOpen(true);
+              if (isDrawer) setMobileDrawerOpen(false);
+            }}
+            className={`w-full flex items-center ${isCollapsed ? 'justify-center p-2' : 'justify-between p-2.5'} rounded-xl text-xs font-bold transition cursor-pointer shadow-md group ${
               isLight
                 ? 'bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800'
                 : 'bg-gradient-to-r from-[#1A2E24] to-[#12221A] hover:from-[#223D30] hover:to-[#172D22] border border-[#39FFB0]/50 text-[#39FFB0]'
             }`}
+            title={t.scanBarcodeBtn}
           >
             <div className="flex items-center gap-2">
               <div className={`w-6 h-6 rounded-md flex items-center justify-center group-hover:scale-110 transition ${
@@ -830,276 +1015,258 @@ export const App: React.FC = () => {
               }`}>
                 <Camera className="w-3.5 h-3.5" />
               </div>
-              <span>{t.scanBarcodeBtn}</span>
+              {!isCollapsed && <span className="truncate">{t.scanBarcodeBtn}</span>}
             </div>
-            <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${
-              isLight ? 'bg-emerald-600 text-white' : 'bg-[#39FFB0] text-[#04120C]'
-            }`}>
-              CAMERA
-            </span>
+            {!isCollapsed && (
+              <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold ${
+                isLight ? 'bg-emerald-600 text-white' : 'bg-[#39FFB0] text-[#04120C]'
+              }`}>
+                SCAN
+              </span>
+            )}
           </button>
 
           {/* Navigation Items */}
           <nav className="space-y-1">
-            
-            {/* 01 Register */}
-            <button
-              onClick={() => setActiveTab('register')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'register'
-                  ? `bg-[#151517] text-[#F5F5F4] ${isAr ? 'border-r-3' : 'border-l-3'} border-[#39FFB0]`
-                  : 'text-[#9C9DA3] hover:text-[#F5F5F4] hover:bg-[#151517]/50'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] text-[#5E5F64]">01</span>
-                <ShoppingBag className="w-4 h-4" />
-                <span>{t.register}</span>
-              </div>
-            </button>
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
 
-            {/* 02 Inventory */}
-            <button
-              onClick={() => setActiveTab('inventory')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'inventory'
-                  ? `bg-[#151517] text-[#F5F5F4] ${isAr ? 'border-r-3' : 'border-l-3'} border-[#39FFB0]`
-                  : 'text-[#9C9DA3] hover:text-[#F5F5F4] hover:bg-[#151517]/50'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] text-[#5E5F64]">02</span>
-                <Package className="w-4 h-4" />
-                <span>{t.inventory}</span>
-              </div>
-              <span className="font-mono text-[10px] text-[#5E5F64]">{products.length}</span>
-            </button>
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveTab(item.id);
+                    if (isDrawer) setMobileDrawerOpen(false);
+                  }}
+                  className={`w-full flex items-center ${isCollapsed ? 'justify-center p-2' : 'justify-between px-3 py-2.5'} rounded-lg text-xs font-semibold transition cursor-pointer ${
+                    isActive
+                      ? `bg-[#151517] text-[#F5F5F4] ${isAr ? 'border-r-3' : 'border-l-3'} border-[#39FFB0]`
+                      : 'text-[#9C9DA3] hover:text-[#F5F5F4] hover:bg-[#151517]/50'
+                  }`}
+                  title={item.label}
+                >
+                  <div className="flex items-center gap-2.5">
+                    {!isCollapsed && <span className="font-mono text-[10px] text-[#5E5F64]">{item.num}</span>}
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#39FFB0]' : ''}`} />
+                    {!isCollapsed && <span className="truncate">{item.label}</span>}
+                  </div>
 
-            {/* 03 Shifts & Cash Drawer */}
-            <button
-              onClick={() => setActiveTab('shifts')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'shifts'
-                  ? `bg-[#151517] text-[#39FFB0] ${isAr ? 'border-r-3' : 'border-l-3'} border-[#39FFB0]`
-                  : 'text-[#9C9DA3] hover:text-[#F5F5F4] hover:bg-[#151517]/50'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] text-[#5E5F64]">03</span>
-                <Banknote className="w-4 h-4 text-[#39FFB0]" />
-                <span>{t.shifts}</span>
-              </div>
-              <span className={`w-2 h-2 rounded-full ${shift.status === 'open' ? 'bg-[#39FFB0]' : 'bg-red-500'}`}></span>
-            </button>
+                  {!isCollapsed && (
+                    <div className="flex items-center gap-1.5">
+                      {item.dot && <span className={`w-2 h-2 rounded-full ${item.dot}`}></span>}
+                      {item.count > 0 && (
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                          item.badgeColor || (isActive ? 'bg-[#39FFB0] text-black' : 'bg-slate-800 text-slate-300')
+                        }`}>
+                          {item.count}
+                        </span>
+                      )}
+                      {item.pill && (
+                        <span className="px-1.5 py-0.2 bg-[#1A2E24] text-[#39FFB0] rounded text-[9px] font-mono font-bold">
+                          {item.pill}
+                        </span>
+                      )}
+                    </div>
+                  )}
 
-            {/* 04 Live Orders Queue */}
-            <button
-              onClick={() => setActiveTab('orders')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'orders'
-                  ? `bg-[#151517] text-[#F5F5F4] ${isAr ? 'border-r-3' : 'border-l-3'} border-[#39FFB0]`
-                  : 'text-[#9C9DA3] hover:text-[#F5F5F4] hover:bg-[#151517]/50'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] text-[#5E5F64]">04</span>
-                <ClipboardList className="w-4 h-4" />
-                <span>{t.orders}</span>
-              </div>
-              {pendingOrdersCount > 0 && (
-                <span className="px-2 py-0.5 rounded-full bg-[#FFB039] text-[#000000] text-[10px] font-mono font-bold">
-                  {pendingOrdersCount}
-                </span>
-              )}
-            </button>
-
-            {/* 05 Sales Log & Receipts */}
-            <button
-              onClick={() => setActiveTab('sales')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'sales'
-                  ? `bg-[#151517] text-[#F5F5F4] ${isAr ? 'border-r-3' : 'border-l-3'} border-[#39FFB0]`
-                  : 'text-[#9C9DA3] hover:text-[#F5F5F4] hover:bg-[#151517]/50'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] text-[#5E5F64]">05</span>
-                <History className="w-4 h-4" />
-                <span>{t.sales}</span>
-              </div>
-              <span className="font-mono text-[10px] text-[#5E5F64]">{sales.length}</span>
-            </button>
-
-            {/* 06 Dashboard Analytics */}
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'dashboard'
-                  ? `bg-[#151517] text-[#F5F5F4] ${isAr ? 'border-r-3' : 'border-l-3'} border-[#39FFB0]`
-                  : 'text-[#9C9DA3] hover:text-[#F5F5F4] hover:bg-[#151517]/50'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] text-[#5E5F64]">06</span>
-                <BarChart3 className="w-4 h-4" />
-                <span>{t.dashboard}</span>
-              </div>
-            </button>
-
-            {/* 07 Customer QR Menu */}
-            <button
-              onClick={() => setActiveTab('qr')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'qr'
-                  ? `bg-[#151517] text-[#F5F5F4] ${isAr ? 'border-r-3' : 'border-l-3'} border-[#39FFB0]`
-                  : 'text-[#9C9DA3] hover:text-[#F5F5F4] hover:bg-[#151517]/50'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] text-[#5E5F64]">07</span>
-                <QrCode className="w-4 h-4" />
-                <span>{t.qrCode}</span>
-              </div>
-            </button>
-
-            {/* 08 Barcode Labels */}
-            <button
-              onClick={() => setActiveTab('labels')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'labels'
-                  ? `bg-[#151517] text-[#F5F5F4] ${isAr ? 'border-r-3' : 'border-l-3'} border-[#39FFB0]`
-                  : 'text-[#9C9DA3] hover:text-[#F5F5F4] hover:bg-[#151517]/50'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] text-[#5E5F64]">08</span>
-                <Tag className="w-4 h-4 text-[#39FFB0]" />
-                <span>{t.barcodeLabels}</span>
-              </div>
-              <span className="px-1.5 py-0.2 bg-[#1A2E24] text-[#39FFB0] rounded text-[9px] font-mono font-bold">
-                PRINT
-              </span>
-            </button>
-
-            {/* 09 NasApp App Hub / App Creation */}
-            <button
-              onClick={() => setActiveTab('app_creation')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'app_creation'
-                  ? `bg-[#151517] text-[#39FFB0] ${isAr ? 'border-r-3' : 'border-l-3'} border-[#39FFB0]`
-                  : 'text-[#9C9DA3] hover:text-[#F5F5F4] hover:bg-[#151517]/50'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] text-[#5E5F64]">09</span>
-                <Smartphone className="w-4 h-4 text-[#39FFB0]" />
-                <span className="font-bold">{t.appCreation}</span>
-              </div>
-              <span className="px-1.5 py-0.2 bg-[#39FFB0]/20 text-[#39FFB0] border border-[#39FFB0]/40 rounded text-[9px] font-mono font-bold">
-                APP
-              </span>
-            </button>
-
-            {/* Dev API workbench tab */}
-            <div className="pt-3">
-              <button
-                onClick={() => setActiveTab('dev_workbench')}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer border ${
-                  activeTab === 'dev_workbench'
-                    ? 'bg-[#151517] text-[#39B0FF] border-[#39B0FF]/40'
-                    : 'text-[#5E5F64] border-transparent hover:text-[#9C9DA3] hover:bg-[#151517]/30'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Terminal className="w-3.5 h-3.5" />
-                  <span>{t.devWorkbench}</span>
-                </div>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#151517] text-[#39B0FF]">
-                  REST
-                </span>
-              </button>
-            </div>
-
+                  {isCollapsed && item.count > 0 && (
+                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400"></span>
+                  )}
+                </button>
+              );
+            })}
           </nav>
         </div>
 
         {/* Sidebar Footer */}
         <div className="pt-4 space-y-2">
-          
-          {/* Admin Security & Settings */}
-          <button
-            onClick={() => setShowAdminSettingsModal(true)}
-            className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
-              isLight
-                ? 'bg-slate-50 hover:bg-emerald-50 border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800'
-                : 'bg-[#121215] hover:bg-[#1E1E21] border-[#1E1E21] hover:border-[#39FFB0]/40 text-[#9C9DA3] hover:text-[#39FFB0]'
-            }`}
-            title={isAr ? 'حماية ورمز المشرف' : 'Admin Security & PIN'}
-          >
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-            <span>{isAr ? 'حماية ورمز المشرف' : 'Admin Security & PIN'}</span>
-          </button>
+          {!isCollapsed ? (
+            <>
+              {/* Admin Security & Settings */}
+              <button
+                onClick={() => {
+                  setShowAdminSettingsModal(true);
+                  if (isDrawer) setMobileDrawerOpen(false);
+                }}
+                className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                  isLight
+                    ? 'bg-slate-50 hover:bg-emerald-50 border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-800'
+                    : 'bg-[#121215] hover:bg-[#1E1E21] border-[#1E1E21] hover:border-[#39FFB0]/40 text-[#9C9DA3] hover:text-[#39FFB0]'
+                }`}
+                title={isAr ? 'حماية ورمز المشرف' : 'Admin Security & PIN'}
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                <span>{isAr ? 'حماية ورمز المشرف' : 'Admin Security & PIN'}</span>
+              </button>
 
-          {/* Quick Lock POS Button */}
-          <button
-            onClick={handleLockAdmin}
-            className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
-              isLight
-                ? 'bg-slate-50 hover:bg-red-50 border-slate-200 hover:border-red-200 text-slate-600 hover:text-red-700'
-                : 'bg-[#121215] hover:bg-red-950/40 border-[#1E1E21] hover:border-red-500/40 text-[#9C9DA3] hover:text-red-300'
-            }`}
-            title="Lock POS Admin"
-          >
-            <Lock className="w-3.5 h-3.5" />
-            <span>{isAr ? 'قفل لوحة التحكم' : 'Lock POS Screen'}</span>
-          </button>
+              {/* Quick Lock POS Button */}
+              <button
+                onClick={() => {
+                  handleLockAdmin();
+                  if (isDrawer) setMobileDrawerOpen(false);
+                }}
+                className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                  isLight
+                    ? 'bg-slate-50 hover:bg-red-50 border-slate-200 hover:border-red-200 text-slate-600 hover:text-red-700'
+                    : 'bg-[#121215] hover:bg-red-950/40 border-[#1E1E21] hover:border-red-500/40 text-[#9C9DA3] hover:text-red-300'
+                }`}
+                title="Lock POS Admin"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>{isAr ? 'قفل لوحة التحكم' : 'Lock POS Screen'}</span>
+              </button>
 
-          {/* Switch to Customer Online Store */}
-          <button
-            onClick={() => setCustomerMode(true)}
-            className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
-              isLight
-                ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800'
-                : 'bg-[#151517] hover:bg-[#1E1E21] border-[#39FFB0]/30 text-[#39FFB0]'
-            }`}
-          >
-            <ShoppingBag className="w-3.5 h-3.5" />
-            <span>{isAr ? 'عرض متجر العملاء' : 'Customer View (Store)'}</span>
-          </button>
+              <PWAInstallButton lang={lang} variant="sidebar" />
 
-          {/* Quick Install NasApp App Widget */}
-          <PWAInstallButton lang={lang} variant="sidebar" />
-
-          <a
-            href="https://wa.me/97477315415?text=Hi%2C%20I%20have%20a%20question"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`flex items-center justify-center gap-2 px-3 py-2 border rounded-lg text-xs font-semibold transition ${
-              isLight
-                ? 'border-emerald-300 text-emerald-800 hover:bg-emerald-50'
-                : 'border-[#39FFB0]/40 text-[#39FFB0] hover:bg-[#39FFB0]/10'
-            }`}
-          >
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>{isAr ? 'الدعم الفني عبر واتساب' : 'Contact on WhatsApp'}</span>
-          </a>
-
-          <div className={`text-[10px] font-mono leading-relaxed border-t pt-2 flex items-center justify-between ${
-            isLight ? 'text-slate-500 border-slate-200' : 'text-[#5E5F64] border-[#1E1E21]'
-          }`}>
-            <span className="flex items-center gap-1.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${cloudConnected ? 'bg-[#39FFB0] animate-pulse' : 'bg-[#FFB039]'}`}></span>
-              <span>{cloudConnected ? (isAr ? 'سحابة فايربيس متصلة' : 'Live Cloud Firestore') : (isAr ? 'جاري الاتصال...' : 'Connecting...')}</span>
-            </span>
-          </div>
+              <div className={`text-[10px] font-mono leading-relaxed border-t pt-2 flex items-center justify-between ${
+                isLight ? 'text-slate-500 border-slate-200' : 'text-[#5E5F64] border-[#1E1E21]'
+              }`}>
+                <span className="flex items-center gap-1.5">
+                  <span className={`w-1.5 h-1.5 rounded-full ${cloudConnected ? 'bg-[#39FFB0] animate-pulse' : 'bg-[#FFB039]'}`}></span>
+                  <span>{cloudConnected ? (isAr ? 'سحابة فايربيس متصلة' : 'Live Cloud Firestore') : (isAr ? 'جاري الاتصال...' : 'Connecting...')}</span>
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col gap-2 items-center">
+              <button
+                onClick={() => setShowAdminSettingsModal(true)}
+                className="p-2 rounded-lg bg-slate-800 text-emerald-400"
+                title="Admin Settings"
+              >
+                <ShieldCheck className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleLockAdmin}
+                className="p-2 rounded-lg bg-slate-800 text-red-400"
+                title="Lock POS"
+              >
+                <Lock className="w-4 h-4" />
+              </button>
+            </div>
+          )}
         </div>
+      </div>
+    );
+  };
 
-      </aside>
+  return (
+    <div dir={isAr ? 'rtl' : 'ltr'} className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${
+      isLight ? 'bg-slate-100 text-slate-800' : 'bg-[#000000] text-[#F5F5F4]'
+    }`}>
+      
+      {/* Top Device Preview & Live Sync Bar */}
+      <DevicePreviewBar
+        deviceMode={deviceMode}
+        onDeviceModeChange={handleDeviceModeChange}
+        orientation={deviceOrientation}
+        onToggleOrientation={handleToggleOrientation}
+        customerMode={customerMode}
+        onToggleCustomerMode={() => setCustomerMode(true)}
+        lang={lang}
+        onToggleLang={toggleLang}
+        cloudConnected={cloudConnected}
+        minimized={minimizedToolbar}
+        onToggleMinimize={() => setMinimizedToolbar(prev => !prev)}
+        pendingOrdersCount={pendingOrdersCount}
+      />
 
-      {/* Main Content Area */}
-      <main className={`flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 transition-colors duration-200 ${
-        isLight ? 'bg-slate-50 text-slate-800' : 'bg-[#000000] text-[#F5F5F4]'
-      }`}>
+      {/* Device Simulator Frame (Scales for Mobile, Tab, Web & Auto) */}
+      <DeviceSimulatorFrame
+        deviceMode={deviceMode}
+        orientation={deviceOrientation}
+        onToggleOrientation={handleToggleOrientation}
+        isLight={isLight}
+      >
+        <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+          
+          {/* Toast Notification Popup */}
+          {toastMessage && (
+            <div className={`fixed top-4 ${isAr ? 'left-4' : 'right-4'} z-50 border px-4 py-2.5 rounded-xl shadow-2xl text-xs font-bold animate-in fade-in slide-in-from-top-2 flex items-center gap-2 ${
+              isLight ? 'bg-white border-emerald-500 text-emerald-800 shadow-emerald-500/10' : 'bg-[#0A0A0B] border-[#39FFB0] text-[#39FFB0]'
+            }`}>
+              <span className={`w-2 h-2 rounded-full animate-ping ${isLight ? 'bg-emerald-600' : 'bg-[#39FFB0]'}`}></span>
+              <span>{toastMessage}</span>
+            </div>
+          )}
+
+          {/* Mobile Header Bar (< 768px) */}
+          <header className={`md:hidden flex items-center justify-between p-2.5 border-b shrink-0 z-30 select-none ${
+            isLight ? 'bg-white border-slate-200 shadow-sm' : 'bg-[#0A0A0B] border-[#1E1E21]'
+          }`}>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setMobileDrawerOpen(true)}
+                className="p-2 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-200 hover:text-white transition cursor-pointer"
+                title="Open Navigation"
+              >
+                <Menu className="w-4 h-4" />
+              </button>
+
+              {storeLogo ? (
+                <img src={storeLogo} alt="Logo" className="w-7 h-7 object-contain rounded-lg" />
+              ) : (
+                <NasappBrandLogo theme={theme} className="w-7 h-7" />
+              )}
+
+              <div className="leading-tight">
+                <span className="font-extrabold text-xs block">{t.brandName}</span>
+                <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  LIVE POS
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setGlobalScannerOpen(true)}
+                className="p-1.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition"
+                title="Scan Barcode"
+              >
+                <Camera className="w-4 h-4" />
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setCustomerMode(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold transition"
+                title="Customer Store"
+              >
+                <Store className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Store</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleLockAdmin}
+                className="p-1.5 rounded-xl bg-slate-800 text-slate-400 border border-slate-700"
+                title="Lock POS"
+              >
+                <Lock className="w-4 h-4" />
+              </button>
+            </div>
+          </header>
+
+          {/* Main Flex Workspace (Desktop/Tablet Sidebar + Content) */}
+          <div className="flex-1 flex overflow-hidden relative">
+            
+            {/* Desktop & Tablet Sidebar */}
+            <aside className={`hidden md:flex flex-col justify-between p-3.5 shrink-0 overflow-y-auto transition-all duration-200 ${
+              sidebarCollapsed ? 'w-18' : 'w-64'
+            } ${
+              isLight ? 'bg-white border-r border-slate-200' : 'bg-[#0A0A0B] border-r border-[#1E1E21]'
+            }`}>
+              {renderSidebarContent(false)}
+            </aside>
+
+            {/* Main Content Area */}
+            <main className={`flex-1 overflow-y-auto p-3 sm:p-5 lg:p-7 pb-20 md:pb-6 transition-colors duration-200 ${
+              isLight ? 'bg-slate-50 text-slate-800' : 'bg-[#000000] text-[#F5F5F4]'
+            }`}>
         
         {/* VIEW 1: REGISTER */}
         {activeTab === 'register' && (
@@ -1241,6 +1408,83 @@ export const App: React.FC = () => {
         )}
 
       </main>
+          </div>
+
+          {/* Mobile Bottom Navigation Bar (< 768px) */}
+          <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-40 border-t flex items-center justify-around py-2 px-1 shadow-2xl backdrop-blur-md select-none ${
+            isLight ? 'bg-white/95 border-slate-200 text-slate-700' : 'bg-[#0A0A0B]/95 border-[#1E1E21] text-[#9C9DA3]'
+          }`}>
+            <button
+              onClick={() => setActiveTab('register')}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                activeTab === 'register' ? (isLight ? 'text-emerald-700 font-black' : 'text-[#39FFB0] font-black') : ''
+              }`}
+            >
+              <ShoppingBag className="w-4 h-4" />
+              <span>{t.register}</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`relative flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                activeTab === 'orders' ? (isLight ? 'text-emerald-700 font-black' : 'text-[#39FFB0] font-black') : ''
+              }`}
+            >
+              <ClipboardList className="w-4 h-4" />
+              <span>{t.orders}</span>
+              {pendingOrdersCount > 0 && (
+                <span className="absolute -top-1 right-1.5 bg-[#FFB039] text-black rounded-full w-4 h-4 flex items-center justify-center text-[9px] font-mono font-black animate-pulse shadow-md">
+                  {pendingOrdersCount}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setActiveTab('inventory')}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                activeTab === 'inventory' ? (isLight ? 'text-emerald-700 font-black' : 'text-[#39FFB0] font-black') : ''
+              }`}
+            >
+              <Package className="w-4 h-4" />
+              <span>{t.inventory}</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('shifts')}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer ${
+                activeTab === 'shifts' ? (isLight ? 'text-emerald-700 font-black' : 'text-[#39FFB0] font-black') : ''
+              }`}
+            >
+              <Banknote className="w-4 h-4" />
+              <span>{t.shifts}</span>
+            </button>
+
+            <button
+              onClick={() => setMobileDrawerOpen(true)}
+              className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-bold transition cursor-pointer hover:text-white"
+            >
+              <Menu className="w-4 h-4" />
+              <span>{isAr ? 'المزيد' : 'More'}</span>
+            </button>
+          </nav>
+
+          {/* Mobile Slide-Over Navigation Drawer */}
+          {mobileDrawerOpen && (
+            <div className="md:hidden fixed inset-0 z-50 flex">
+              <div 
+                className="fixed inset-0 bg-black/70 backdrop-blur-sm transition-opacity animate-in fade-in"
+                onClick={() => setMobileDrawerOpen(false)}
+              />
+              <div className={`relative z-10 w-72 max-w-[85vw] h-full shadow-2xl p-4 overflow-y-auto ${
+                isLight ? 'bg-white text-slate-800' : 'bg-[#0A0A0B] text-[#F5F5F4]'
+              }`}>
+                {renderSidebarContent(true)}
+              </div>
+            </div>
+          )}
+
+        </div>
+      </DeviceSimulatorFrame>
 
       {/* Hidden Print Receipt Template */}
       <PrintReceiptArea sale={lastPrintSale} lang={lang} storeLogo={storeLogo} />

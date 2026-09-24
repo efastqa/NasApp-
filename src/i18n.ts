@@ -190,6 +190,21 @@ export interface TranslationDict {
   alignBarcodePrompt: string;
   scannedResult: string;
   closeScanner: string;
+
+  // Mobile / Tab / Web Device Setup & Live Sync
+  deviceSetup: string;
+  deviceMobile: string;
+  deviceTab: string;
+  deviceWeb: string;
+  deviceAuto: string;
+  orientationPortrait: string;
+  orientationLandscape: string;
+  liveSyncStatus: string;
+  liveSyncConnected: string;
+  liveSyncDesc: string;
+  mobileMenuToggle: string;
+  switchToPos: string;
+  switchToCustomer: string;
 }
 
 export const translations: Record<Language, TranslationDict> = {
@@ -374,7 +389,22 @@ export const translations: Record<Language, TranslationDict> = {
     uploadPhotoTab: '🖼️ Image Upload',
     alignBarcodePrompt: 'Align Barcode or QR Code in frame',
     scannedResult: 'Scanned Code',
-    closeScanner: 'Close Scanner'
+    closeScanner: 'Close Scanner',
+
+    // Mobile / Tab / Web Device Setup & Live Sync
+    deviceSetup: 'Device View',
+    deviceMobile: 'Mobile (Phone)',
+    deviceTab: 'Tablet (Tab)',
+    deviceWeb: 'Desktop Web',
+    deviceAuto: 'Responsive Live',
+    orientationPortrait: 'Portrait',
+    orientationLandscape: 'Landscape',
+    liveSyncStatus: 'Live Cloud Sync Active',
+    liveSyncConnected: 'Real-time sync between Mobile 📱, Tab 📟 & Web 💻',
+    liveSyncDesc: 'Orders and inventory sync live in Qatar real-time via Firestore',
+    mobileMenuToggle: 'Navigation Menu',
+    switchToPos: 'Open POS Register',
+    switchToCustomer: 'Customer Menu'
   },
 
   ar: {
@@ -558,6 +588,21 @@ export const translations: Record<Language, TranslationDict> = {
     uploadPhotoTab: '🖼️ رفع صورة باركود',
     alignBarcodePrompt: 'وجّه الكاميرا نحو الباركود أو رمز QR',
     scannedResult: 'الكود الممسوح',
-    closeScanner: 'إغلاق الماسح'
+    closeScanner: 'إغلاق الماسح',
+
+    // Mobile / Tab / Web Device Setup & Live Sync
+    deviceSetup: 'طريقة العرض',
+    deviceMobile: 'شاشة جوال (Mobile)',
+    deviceTab: 'شاشة تابلت (Tab / iPad)',
+    deviceWeb: 'كمبيوتر ويب (Desktop)',
+    deviceAuto: 'تلقائي حسب الجهاز',
+    orientationPortrait: 'عمودي',
+    orientationLandscape: 'أفقي',
+    liveSyncStatus: 'المزامنة السحابية الحية مفعلة',
+    liveSyncConnected: 'تزامن فوري بين الجوال 📱، التابلت 📟 والويب 💻',
+    liveSyncDesc: 'يتم تحديث الطلبات والمخزون مباشرة وفورياً عبر فايربيس (قطر)',
+    mobileMenuToggle: 'قائمة التنقل',
+    switchToPos: 'فتح شاشة الكاشير (POS)',
+    switchToCustomer: 'قائمة المتجر للعميل'
   }
 };

@@ -44,6 +44,8 @@ import { Language, translations } from '../../i18n';
 import { NasappBrandLogo } from '../NasappBrandLogo';
 import { useTheme } from '../../ThemeContext';
 import { PWAInstallButton } from '../pwa/PWAInstallButton';
+import { db } from '../../firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 interface CustomerOrderViewProps {
   products: Product[];
@@ -160,10 +162,36 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
   const BUSINESS_WHATSAPP = '97477315415';
   const fmt = (n: number) => (isAr ? `${Number(n).toFixed(2)} ر.ق` : `QR ${Number(n).toFixed(2)}`);
 
-  // Active tracked order from live orders list
-  const activeTrackedOrder: Order | undefined = orderSuccessId 
-    ? orders.find(o => o.id.toLowerCase() === orderSuccessId.toLowerCase())
-    : undefined;
+  // Direct real-time Firestore listener for live order tracking across mobile, tab and web
+  const [liveDirectOrder, setLiveDirectOrder] = useState<Order | null>(null);
+
+  useEffect(() => {
+    if (!orderSuccessId) {
+      setLiveDirectOrder(null);
+      return;
+    }
+
+    try {
+      const unsub = onSnapshot(
+        doc(db, 'orders', orderSuccessId),
+        (docSnap) => {
+          if (docSnap.exists()) {
+            setLiveDirectOrder(docSnap.data() as Order);
+          }
+        },
+        (err) => {
+          console.warn('Direct order tracking onSnapshot note:', err);
+        }
+      );
+      return () => unsub();
+    } catch (e) {
+      console.warn('Error setting up direct order listener:', e);
+    }
+  }, [orderSuccessId]);
+
+  // Active tracked order from live direct stream or fallback orders list
+  const activeTrackedOrder: Order | undefined = liveDirectOrder 
+    || (orderSuccessId ? orders.find(o => o.id.toLowerCase() === orderSuccessId.toLowerCase()) : undefined);
 
   const categories = ['All', ...Array.from(new Set(products.map(p => p.category).filter(Boolean))).sort()];
 
