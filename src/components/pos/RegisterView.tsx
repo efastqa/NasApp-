@@ -216,8 +216,8 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
     
     const text = encodeURIComponent(
       isAr 
-        ? `مرحباً! إليك فاتورة مشترياتك من ناس آب قطر (Nasapp)\n\n${lines}${disc}\n\nالإجمالي: ${fmt(sale.total)}\nالتاريخ: ${new Date(sale.timestamp).toLocaleString('ar-QA')}\n\nشكراً لتسوقكم معنا!`
-        : `Hi! Here's your receipt from Nasapp Qatar\n\n${lines}${disc}\n\nTotal: ${fmt(sale.total)}\n${new Date(sale.timestamp).toLocaleString()}\n\nThank you for shopping with us!`
+        ? `مرحباً! إليك فاتورة مشترياتك من ناس آب قطر (NasApp.qa)\n\n${lines}${disc}\n\nالإجمالي: ${fmt(sale.total)}\nالتاريخ: ${new Date(sale.timestamp).toLocaleString('ar-QA')}\n\nشكراً لتسوقكم معنا!`
+        : `Hi! Here's your receipt from NasApp.qa Qatar\n\n${lines}${disc}\n\nTotal: ${fmt(sale.total)}\n${new Date(sale.timestamp).toLocaleString()}\n\nThank you for shopping with us!`
     );
     window.open(`https://wa.me/${digits}?text=${text}`, '_blank');
   };

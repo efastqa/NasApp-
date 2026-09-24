@@ -173,7 +173,7 @@ export interface TranslationDict {
 
 export const translations: Record<Language, TranslationDict> = {
   en: {
-    brandName: 'Nasapp',
+    brandName: 'NasApp.qa',
     brandSubtitle: 'Doha Retail Cloud',
     currency: 'QR',
     currencySymbol: 'ر.ق',
@@ -269,7 +269,7 @@ export const translations: Record<Language, TranslationDict> = {
     customizeLabel: 'Customize Label Elements',
     showPrice: 'Show Price (QR)',
     showBarcode: 'Show Barcode',
-    showBrand: 'Show Brand (Nasapp)',
+    showBrand: 'Show Brand (NasApp.qa)',
     showSku: 'Show SKU Code',
     showDate: 'Show Date / Batch',
     labelSize50x30: '50 × 30 mm (Standard Shelf Tag)',
@@ -282,7 +282,7 @@ export const translations: Record<Language, TranslationDict> = {
     tables: 'Tables & Floor',
     shifts: 'Shifts & Cash Drawer',
 
-    welcomeMenu: 'Nasapp Express Store',
+    welcomeMenu: 'NasApp.qa Express Store',
     welcomeMenuSubtitle: 'Browse our fresh catalogue, customize your items, and order directly',
     yourCart: 'Your Order Cart',
     orderType: 'Order Method',
@@ -338,7 +338,7 @@ export const translations: Record<Language, TranslationDict> = {
   },
 
   ar: {
-    brandName: 'ناس آب (Nasapp)',
+    brandName: 'ناس آب (NasApp.qa)',
     brandSubtitle: 'نظام إدارة المبيعات والمخزون - الدوحة',
     currency: 'ر.ق',
     currencySymbol: 'ر.ق',
@@ -434,7 +434,7 @@ export const translations: Record<Language, TranslationDict> = {
     customizeLabel: 'تخصيص عناصر الملصق',
     showPrice: 'إظهار السعر (ر.ق)',
     showBarcode: 'إظهار رمز الباركود',
-    showBrand: 'إظهار اسم المتجر (ناس آب)',
+    showBrand: 'إظهار اسم المتجر (NasApp.qa)',
     showSku: 'إظهار رمز SKU',
     showDate: 'إظهار التاريخ / الدفعة',
     labelSize50x30: '50 × 30 مم (ملصق رفوف قياسي)',
@@ -447,7 +447,7 @@ export const translations: Record<Language, TranslationDict> = {
     tables: 'الطاولات والصالة',
     shifts: 'الورديات ودرج النقد',
 
-    welcomeMenu: 'متجر ناس آب (Nasapp)',
+    welcomeMenu: 'متجر ناس آب (NasApp.qa)',
     welcomeMenuSubtitle: 'تصفح قائمة منتجاتنا، خصص طلبك، واطلب مباشرة للاستلام أو التوصيل',
     yourCart: 'سلة طلبك',
     orderType: 'طريقة الاستلام',

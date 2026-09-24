@@ -54,8 +54,8 @@ export const SalesLogView: React.FC<SalesLogViewProps> = ({
     
     const text = encodeURIComponent(
       isAr 
-        ? `مرحباً! إليك إيصال مشترياتك من ناس آب (Nasapp)\n\n${lines}${disc}\n\nالإجمالي: ${fmt(sale.total)}\nالتاريخ: ${new Date(sale.timestamp).toLocaleString('ar-QA')}\n\nشكراً لتسوقكم معنا!`
-        : `Hi! Here's your receipt from Nasapp\n\n${lines}${disc}\n\nTotal: ${fmt(sale.total)}\n${new Date(sale.timestamp).toLocaleString()}\n\nThank you for shopping with us!`
+        ? `مرحباً! إليك إيصال مشترياتك من ناس آب (NasApp.qa)\n\n${lines}${disc}\n\nالإجمالي: ${fmt(sale.total)}\nالتاريخ: ${new Date(sale.timestamp).toLocaleString('ar-QA')}\n\nشكراً لتسوقكم معنا!`
+        : `Hi! Here's your receipt from NasApp.qa\n\n${lines}${disc}\n\nTotal: ${fmt(sale.total)}\n${new Date(sale.timestamp).toLocaleString()}\n\nThank you for shopping with us!`
     );
     window.open(`https://wa.me/${digits}?text=${text}`, '_blank');
   };

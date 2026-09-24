@@ -28,7 +28,7 @@ export const PrintReceiptArea: React.FC<PrintReceiptAreaProps> = ({ sale, lang =
         ) : (
           <NasappBrandLogo className="w-12 h-12 mb-1" />
         )}
-        <h2 className="font-bold text-lg">{isAr ? 'ناس آب (Nasapp)' : 'Nasapp'}</h2>
+        <h2 className="font-bold text-lg">{isAr ? 'ناس آب (NasApp.qa)' : 'NasApp.qa'}</h2>
         <p className="text-[10px] uppercase tracking-wider text-neutral-600">
           {isAr ? 'فاتورة بيع رسمية - الدوحة' : 'Official Sales Receipt - Doha'}
         </p>

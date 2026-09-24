@@ -180,7 +180,7 @@ export const AdminLockScreen: React.FC<AdminLockScreenProps> = ({
           )}
           <div>
             <h1 className={`font-extrabold text-sm tracking-tight ${isLight ? 'text-slate-900' : 'text-white'}`}>
-              NASAPP POS
+              NasApp.qa POS
             </h1>
             <p className={`text-[10px] ${isLight ? 'text-slate-500' : 'text-[#9C9DA3]'}`}>
               {isAr ? 'نظام الكاشير وإدارة المبيعات' : 'Point of Sale & Admin Panel'}
@@ -535,7 +535,7 @@ export const AdminLockScreen: React.FC<AdminLockScreenProps> = ({
 
       {/* Footer Branding */}
       <footer className={`text-center text-[10px] py-2 ${isLight ? 'text-slate-400' : 'text-[#5E5F64]'}`}>
-        <p>🔒 Enterprise Encrypted POS • Nasapp Suite</p>
+        <p>🔒 Enterprise Encrypted POS • NasApp.qa Suite</p>
       </footer>
 
     </div>

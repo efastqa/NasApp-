@@ -185,8 +185,8 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
     
     const text = encodeURIComponent(
       isAr
-        ? `مرحباً ${order.customerName || 'عميلنا العزيز'}! تم تحديث حالة طلبك #${order.id} إلى: *${statusLabel}*.\n\n${itemsStr}${discStr}\n\nالإجمالي: ${fmt(order.total)}\n\n📍 *رابط التتبع المباشر:*\n${trackingUrl}\n\nشكراً لتعاملكم معنا في ناس آب (Nasapp)!`
-        : `Hi ${order.customerName || 'Customer'}! Your order #${order.id} status is now: *${statusLabel}*.\n\n${itemsStr}${discStr}\n\nTotal: ${fmt(order.total)}\n\n📍 *Live Order Tracker:*\n${trackingUrl}\n\nThank you for ordering with Nasapp!`
+        ? `مرحباً ${order.customerName || 'عميلنا العزيز'}! تم تحديث حالة طلبك #${order.id} إلى: *${statusLabel}*.\n\n${itemsStr}${discStr}\n\nالإجمالي: ${fmt(order.total)}\n\n📍 *رابط التتبع المباشر:*\n${trackingUrl}\n\nشكراً لتعاملكم معنا في ناس آب (NasApp.qa)!`
+        : `Hi ${order.customerName || 'Customer'}! Your order #${order.id} status is now: *${statusLabel}*.\n\n${itemsStr}${discStr}\n\nTotal: ${fmt(order.total)}\n\n📍 *Live Order Tracker:*\n${trackingUrl}\n\nThank you for ordering with NasApp.qa!`
     );
     window.open(`https://wa.me/${digits}?text=${text}`, '_blank');
   };

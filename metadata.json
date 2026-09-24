@@ -1,6 +1,6 @@
 {
-  "name": "Live Web & Backend App Studio",
-  "description": "Interactive workspace to run HTML code, integrate Express backend APIs, test endpoints, and deploy live fullstack web applications.",
+  "name": "NasApp.qa",
+  "description": "NasApp.qa — Point of Sale, Smart Inventory, Table QR & Customer Online Ordering Suite.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

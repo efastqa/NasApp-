@@ -312,8 +312,8 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
 
         const message = encodeURIComponent(
           isAr
-            ? `🛍️ *طلب جديد عبر قائمة QR - ناس آب*\nرقم الطلب: #${created.id}\nالاسم: ${customerName || 'عميل'}\nالجوال: ${customerPhone}\nطريقة الاستلام: ${deliveryText}\n\n*الأصناف والخيارات المطلوبة:*\n${lines}\n\n*الإجمالي:* ${fmt(total)}\n\n📍 *رابط تتبع الطلب المباشر:*\n${trackingUrl}\n\nيرجى تأكيد استلام وتجهيز الطلب، شكراً لكم!`
-            : `🛍️ *New Online Self-Order - Nasapp*\nOrder ID: #${created.id}\nCustomer: ${customerName || 'Guest'}\nPhone: ${customerPhone}\nMethod: ${deliveryText}\n\n*Order Items & Options:*\n${lines}\n\n*Total:* ${fmt(total)}\n\n📍 *Live Order Tracker:*\n${trackingUrl}\n\nPlease confirm order preparation, thanks!`
+            ? `🛍️ *طلب جديد عبر قائمة QR - ناس آب (NasApp.qa)*\nرقم الطلب: #${created.id}\nالاسم: ${customerName || 'عميل'}\nالجوال: ${customerPhone}\nطريقة الاستلام: ${deliveryText}\n\n*الأصناف والخيارات المطلوبة:*\n${lines}\n\n*الإجمالي:* ${fmt(total)}\n\n📍 *رابط تتبع الطلب المباشر:*\n${trackingUrl}\n\nيرجى تأكيد استلام وتجهيز الطلب، شكراً لكم!`
+            : `🛍️ *New Online Self-Order - NasApp.qa*\nOrder ID: #${created.id}\nCustomer: ${customerName || 'Guest'}\nPhone: ${customerPhone}\nMethod: ${deliveryText}\n\n*Order Items & Options:*\n${lines}\n\n*Total:* ${fmt(total)}\n\n📍 *Live Order Tracker:*\n${trackingUrl}\n\nPlease confirm order preparation, thanks!`
         );
 
         window.open(`https://wa.me/${BUSINESS_WHATSAPP}?text=${message}`, '_blank');
@@ -383,7 +383,7 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
               <h1 className={`font-extrabold text-sm sm:text-base tracking-tight flex items-center gap-2 ${
                 isLight ? 'text-slate-900' : 'text-white'
               }`}>
-                <span>{isAr ? 'ناس آب - Nasapp' : 'Nasapp Store'}</span>
+                <span>{isAr ? 'ناس آب - NasApp.qa' : 'NasApp.qa Store'}</span>
                 <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold font-mono border ${
                   isLight 
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-300' 
@@ -540,7 +540,7 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
               <div>
                 <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
                   <h2 className={`text-base sm:text-lg font-black ${isLight ? 'text-slate-900' : 'text-white'}`}>
-                    {isAr ? 'متجر وسوبرماركت ناس آب' : 'Nasapp Supermarket & Grocery'}
+                    {isAr ? 'متجر وسوبرماركت ناس آب (NasApp.qa)' : 'NasApp.qa Supermarket & Grocery'}
                   </h2>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 border ${
                     isLight 
