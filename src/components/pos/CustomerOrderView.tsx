@@ -29,6 +29,12 @@ import {
   Sun,
   Moon,
   ArrowRight,
+  ShieldCheck,
+  KeyRound,
+  Banknote,
+  Landmark,
+  Copy,
+  Zap,
   X
 } from 'lucide-react';
 import { Product, CartItem, Order } from '../../types';
@@ -44,6 +50,7 @@ interface CustomerOrderViewProps {
   orders?: Order[];
   onSubmitOrder: (orderPayload: any) => Promise<any>;
   onExitCustomerMode?: () => void;
+  onOpenAdminAccess?: () => void;
   lang?: Language;
   onToggleLang?: () => void;
   storeLogo?: string | null;
@@ -57,6 +64,7 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
   orders = [],
   onSubmitOrder,
   onExitCustomerMode,
+  onOpenAdminAccess,
   lang = 'en',
   onToggleLang,
   storeLogo: initialStoreLogo,
@@ -103,6 +111,27 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
   const [customerName, setCustomerName] = useState<string>('');
   const [customerPhone, setCustomerPhone] = useState<string>('');
   const [address, setAddress] = useState<string>('');
+  const [paymentMethod, setPaymentMethod] = useState<'cod' | 'fawran' | 'bank_transfer'>('cod');
+  const [paymentRef, setPaymentRef] = useState<string>('');
+  const [fawranCopied, setFawranCopied] = useState<boolean>(false);
+  const [bankCopied, setBankCopied] = useState<boolean>(false);
+
+  const handleCopyFawran = () => {
+    try {
+      navigator.clipboard?.writeText('30606701');
+      setFawranCopied(true);
+      setTimeout(() => setFawranCopied(false), 2200);
+    } catch {}
+  };
+
+  const handleCopyBank = () => {
+    try {
+      navigator.clipboard?.writeText('30606701');
+      setBankCopied(true);
+      setTimeout(() => setBankCopied(false), 2200);
+    } catch {}
+  };
+
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [orderSuccessId, setOrderSuccessId] = useState<string | null>(() => {
     try {
@@ -247,11 +276,19 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
       ? address.trim() 
       : 'Pickup in-store';
 
+    const paymentMethodText = paymentMethod === 'fawran'
+      ? (isAr ? `⚡ فوران Fawran (30606701)${paymentRef.trim() ? ` [مرجع: ${paymentRef.trim()}]` : ''}` : `⚡ Fawran Instant (30606701)${paymentRef.trim() ? ` [Ref: ${paymentRef.trim()}]` : ''}`)
+      : paymentMethod === 'bank_transfer'
+      ? (isAr ? `🏦 تحويل بنكي QNB (30606701)${paymentRef.trim() ? ` [مرجع: ${paymentRef.trim()}]` : ''}` : `🏦 Bank Transfer QNB (30606701)${paymentRef.trim() ? ` [Ref: ${paymentRef.trim()}]` : ''}`)
+      : (isAr ? '💵 الدفع عند الاستلام (كاش)' : '💵 Cash on Delivery (COD)');
+
     const payload = {
       customerName: customerName.trim() || (isAr ? 'عميل' : 'Valued Customer'),
       customerPhone: customerPhone.trim(),
       deliveryMethod,
       deliveryAddress: resolvedDeliveryAddress,
+      paymentMethod,
+      paymentReference: paymentRef.trim() || undefined,
       items: cart,
       subtotal,
       discount: { type: 'fixed', value: 0, amount: 0 },
@@ -283,8 +320,8 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
 
         const message = encodeURIComponent(
           isAr
-            ? `🛍️ *طلب جديد عبر قائمة QR - ناس آب (NasApp.qa)*\nرقم الطلب: #${created.id}\nالاسم: ${customerName || 'عميل'}\nالجوال: ${customerPhone}\nطريقة الاستلام: ${deliveryText}\n\n*الأصناف والخيارات المطلوبة:*\n${lines}\n\n*الإجمالي:* ${fmt(total)}\n\n📍 *رابط تتبع الطلب المباشر:*\n${trackingUrl}\n\nيرجى تأكيد استلام وتجهيز الطلب، شكراً لكم!`
-            : `🛍️ *New Online Self-Order - NasApp.qa*\nOrder ID: #${created.id}\nCustomer: ${customerName || 'Guest'}\nPhone: ${customerPhone}\nMethod: ${deliveryText}\n\n*Order Items & Options:*\n${lines}\n\n*Total:* ${fmt(total)}\n\n📍 *Live Order Tracker:*\n${trackingUrl}\n\nPlease confirm order preparation, thanks!`
+            ? `🛍️ *طلب جديد عبر قائمة QR - ناس آب (NasApp.qa)*\nرقم الطلب: #${created.id}\nالاسم: ${customerName || 'عميل'}\nالجوال: ${customerPhone}\nطريقة الاستلام: ${deliveryText}\n💰 *طريقة الدفع:* ${paymentMethodText}\n\n*الأصناف والخيارات المطلوبة:*\n${lines}\n\n*الإجمالي:* ${fmt(total)}\n\n📍 *رابط تتبع الطلب المباشر:*\n${trackingUrl}\n\nيرجى تأكيد استلام وتجهيز الطلب، شكراً لكم!`
+            : `🛍️ *New Online Self-Order - NasApp.qa*\nOrder ID: #${created.id}\nCustomer: ${customerName || 'Guest'}\nPhone: ${customerPhone}\nMethod: ${deliveryText}\n💰 *Payment Option:* ${paymentMethodText}\n\n*Order Items & Options:*\n${lines}\n\n*Total:* ${fmt(total)}\n\n📍 *Live Order Tracker:*\n${trackingUrl}\n\nPlease confirm order preparation, thanks!`
         );
 
         window.open(`https://wa.me/${BUSINESS_WHATSAPP}?text=${message}`, '_blank');
@@ -436,17 +473,21 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
 
             <PWAInstallButton lang={lang} variant="header" />
 
-            {onExitCustomerMode && !isDirectCustomerUrl && (
+            {/* Staff & Admin Access Button in Header (Suitable visible place on Web & Phone) */}
+            {(onOpenAdminAccess || onExitCustomerMode) && (
               <button
-                onClick={onExitCustomerMode}
-                className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-xl text-xs transition cursor-pointer ${
+                type="button"
+                onClick={onOpenAdminAccess || onExitCustomerMode}
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border shadow-sm ${
                   isLight 
-                    ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-600 hover:text-slate-900' 
-                    : 'bg-[#151517] hover:bg-[#1E1E21] border-[#1E1E21] text-[#9C9DA3] hover:text-white'
+                    ? 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-800' 
+                    : 'bg-[#151517] hover:bg-[#1E1E21] border-[#39FFB0]/40 text-[#39FFB0] hover:border-[#39FFB0]'
                 }`}
+                title={isAr ? 'دخول الموظفين والإدارة (POS)' : 'Staff & Admin POS Access'}
               >
-                <ArrowLeft className={`w-3.5 h-3.5 ${isAr ? 'rotate-180' : ''}`} />
-                <span>{t.exitCustomerMode}</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-[#39FFB0] shrink-0" />
+                <span className="hidden sm:inline font-bold">{t.staffAndAdmin}</span>
+                <span className="sm:hidden font-bold">{isAr ? 'الموظفين' : 'Staff'}</span>
               </button>
             )}
           </div>
@@ -673,6 +714,34 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
                   }`}>
                     <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                     <span className="truncate">{activeTrackedOrder.deliveryAddress}</span>
+                  </div>
+                )}
+
+                {activeTrackedOrder.paymentMethod && (
+                  <div className={`pt-2 border-t flex items-center justify-between text-xs ${
+                    isLight ? 'border-slate-200 text-slate-600' : 'border-[#1E1E21] text-[#9C9DA3]'
+                  }`}>
+                    <span className="flex items-center gap-1.5">
+                      <Banknote className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <span>{isAr ? 'طريقة الدفع:' : 'Payment Method:'}</span>
+                    </span>
+                    <span className="font-bold flex items-center gap-1">
+                      {activeTrackedOrder.paymentMethod === 'fawran' && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-mono text-[11px]">
+                          ⚡ Fawran (30606701)
+                        </span>
+                      )}
+                      {activeTrackedOrder.paymentMethod === 'bank_transfer' && (
+                        <span className="px-2 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-600 dark:text-blue-400 font-mono text-[11px]">
+                          🏦 Bank Transfer (QNB)
+                        </span>
+                      )}
+                      {activeTrackedOrder.paymentMethod === 'cod' && (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-600 dark:text-amber-400 font-medium text-[11px]">
+                          💵 {isAr ? 'عند الاستلام (كاش)' : 'Cash on Delivery (COD)'}
+                        </span>
+                      )}
+                    </span>
                   </div>
                 )}
               </div>
@@ -1120,6 +1189,155 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
                   )}
                 </div>
 
+                {/* Qatar Payment Options */}
+                <div className={`pt-2 border-t ${isLight ? 'border-slate-200' : 'border-[#1E1E21]'}`}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className={`block text-[11px] font-bold uppercase tracking-wider ${
+                      isLight ? 'text-slate-600' : 'text-[#9C9DA3]'
+                    }`}>
+                      {t.paymentOption}
+                    </label>
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-400/15 border border-amber-400/30 text-amber-500">
+                      QATAR 🇶🇦
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {/* Cash on Delivery */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('cod')}
+                      className={`p-1.5 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center gap-1 ${
+                        paymentMethod === 'cod'
+                          ? (isLight ? 'bg-amber-50 border-amber-500 text-amber-950 font-bold shadow-sm' : 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold shadow-sm')
+                          : (isLight ? 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300' : 'bg-[#060A12] border-[#1E293B] text-slate-400 hover:border-slate-700')
+                      }`}
+                    >
+                      <Banknote className="w-3.5 h-3.5 shrink-0" />
+                      <span className="text-[10px] leading-tight font-semibold">{isAr ? 'عند الاستلام' : 'Cash (COD)'}</span>
+                    </button>
+
+                    {/* Fawran (30606701) */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('fawran')}
+                      className={`p-1.5 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center gap-0.5 relative ${
+                        paymentMethod === 'fawran'
+                          ? 'bg-emerald-600 border-emerald-500 text-white font-bold shadow-sm'
+                          : (isLight ? 'bg-slate-50 border-slate-200 text-slate-600 hover:border-emerald-300' : 'bg-[#060A12] border-[#1E293B] text-slate-400 hover:border-emerald-500/50')
+                      }`}
+                    >
+                      <div className="flex items-center gap-1">
+                        <Zap className="w-3 h-3 fill-current shrink-0 text-amber-300" />
+                        <span className="text-[10px] leading-tight font-extrabold">{isAr ? 'فوران' : 'Fawran'}</span>
+                      </div>
+                      <span className="text-[9px] font-mono leading-none opacity-90 font-bold">30606701</span>
+                    </button>
+
+                    {/* Bank Transfer */}
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('bank_transfer')}
+                      className={`p-1.5 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center gap-1 ${
+                        paymentMethod === 'bank_transfer'
+                          ? (isLight ? 'bg-blue-50 border-blue-500 text-blue-950 font-bold shadow-sm' : 'bg-blue-500/20 border-blue-400 text-blue-300 font-bold shadow-sm')
+                          : (isLight ? 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300' : 'bg-[#060A12] border-[#1E293B] text-slate-400 hover:border-slate-700')
+                      }`}
+                    >
+                      <Landmark className="w-3.5 h-3.5 shrink-0" />
+                      <span className="text-[10px] leading-tight font-semibold">{isAr ? 'تحويل بنكي' : 'Bank Transfer'}</span>
+                    </button>
+                  </div>
+
+                  {/* Fawran Active Details Box */}
+                  {paymentMethod === 'fawran' && (
+                    <div className={`mt-2 p-2 rounded-xl border animate-in fade-in duration-200 text-xs ${
+                      isLight ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950' : 'bg-emerald-950/30 border-emerald-500/30 text-emerald-200'
+                    }`}>
+                      <div className="flex items-center justify-between gap-1.5">
+                        <div className="flex items-center gap-1 font-bold text-[11px]">
+                          <Zap className="w-3 h-3 text-emerald-600 dark:text-[#39FFB0] fill-current" />
+                          <span>{isAr ? 'رقم فوران:' : 'Fawran:'}</span>
+                          <span className="font-mono text-xs font-black px-1 py-0.5 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                            30606701
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleCopyFawran}
+                          className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 transition cursor-pointer shadow-sm"
+                        >
+                          {fawranCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                          <span>{fawranCopied ? t.copied : t.copy}</span>
+                        </button>
+                      </div>
+                      <p className={`text-[9px] mt-1 leading-tight ${isLight ? 'text-emerald-800' : 'text-emerald-300/80'}`}>
+                        {t.fawranInstructions}
+                      </p>
+                      <div className="mt-1.5">
+                        <input
+                          type="text"
+                          value={paymentRef}
+                          onChange={(e) => setPaymentRef(e.target.value)}
+                          placeholder={t.paymentRefOptional}
+                          className={`w-full px-2 py-1 rounded-lg text-[10px] border focus:outline-none transition ${
+                            isLight ? 'bg-white border-emerald-300 text-slate-800 placeholder-slate-400' : 'bg-black/60 border-emerald-500/30 text-white placeholder-zinc-500'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bank Transfer Active Details Box */}
+                  {paymentMethod === 'bank_transfer' && (
+                    <div className={`mt-2 p-2 rounded-xl border animate-in fade-in duration-200 text-xs ${
+                      isLight ? 'bg-blue-50/90 border-blue-200 text-blue-950' : 'bg-blue-950/30 border-blue-500/30 text-blue-200'
+                    }`}>
+                      <div className="flex items-center justify-between gap-1.5">
+                        <div className="font-bold flex items-center gap-1 text-[11px]">
+                          <Landmark className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                          <span>QNB:</span>
+                          <span className="font-mono text-xs font-black px-1 py-0.5 rounded bg-blue-500/20 text-blue-700 dark:text-blue-300">
+                            30606701
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleCopyBank}
+                          className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1 transition cursor-pointer shadow-sm"
+                        >
+                          {bankCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                          <span>{bankCopied ? t.copied : t.copy}</span>
+                        </button>
+                      </div>
+                      <p className={`text-[9px] mt-1 leading-tight ${isLight ? 'text-blue-800' : 'text-blue-300/80'}`}>
+                        {isAr ? 'يرجى تحويل المبلغ ثم إرسال إيصال التحويل عبر واتساب' : 'Please transfer the amount and share the receipt on WhatsApp'}
+                      </p>
+                      <div className="mt-1.5">
+                        <input
+                          type="text"
+                          value={paymentRef}
+                          onChange={(e) => setPaymentRef(e.target.value)}
+                          placeholder={t.paymentRefOptional}
+                          className={`w-full px-2 py-1 rounded-lg text-[10px] border focus:outline-none transition ${
+                            isLight ? 'bg-white border-blue-300 text-slate-800 placeholder-slate-400' : 'bg-black/60 border-blue-500/30 text-white placeholder-zinc-500'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cash on Delivery (COD) Active Note */}
+                  {paymentMethod === 'cod' && (
+                    <div className={`mt-1.5 p-1.5 rounded-xl border text-[10px] flex items-center gap-1.5 ${
+                      isLight ? 'bg-slate-50 border-slate-200 text-slate-600' : 'bg-[#060A12] border-[#1E293B] text-slate-400'
+                    }`}>
+                      <Banknote className="w-3 h-3 text-amber-500 shrink-0" />
+                      <span>{t.cashOnDeliveryDesc}</span>
+                    </div>
+                  )}
+                </div>
+
                 {/* Subtotal & Total */}
                 <div className={`pt-2 border-t space-y-1 text-xs ${
                   isLight ? 'border-slate-200' : 'border-[#1E1E21]'
@@ -1161,6 +1379,60 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
               </form>
             </div>
 
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* STAFF & ADMIN ACCESS SECTION (CONVENIENT ACCESS FOR POS) */}
+        {/* ======================================================== */}
+        {(onOpenAdminAccess || onExitCustomerMode) && (
+          <div className={`mt-8 p-4 sm:p-5 rounded-2xl sm:rounded-3xl border transition shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4 ${
+            isLight 
+              ? 'bg-gradient-to-r from-slate-50 via-emerald-50/20 to-white border-slate-200 shadow-slate-200/50' 
+              : 'bg-gradient-to-r from-[#0C1210] via-[#0D0D10] to-[#121215] border-[#1E1E21] shadow-black/40'
+          }`}>
+            <div className="flex items-center gap-3.5 text-center sm:text-left rtl:sm:text-right">
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${
+                isLight 
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                  : 'bg-[#39FFB0]/10 text-[#39FFB0] border-[#39FFB0]/30'
+              }`}>
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className={`text-xs sm:text-sm font-extrabold flex items-center justify-center sm:justify-start gap-1.5 ${
+                  isLight ? 'text-slate-900' : 'text-white'
+                }`}>
+                  <span>{t.staffAndAdmin}</span>
+                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold border ${
+                    isLight 
+                      ? 'bg-amber-100 text-amber-900 border-amber-300' 
+                      : 'bg-amber-400/15 text-amber-400 border-amber-400/30'
+                  }`}>
+                    POS
+                  </span>
+                </h4>
+                <p className={`text-[11px] sm:text-xs mt-0.5 ${
+                  isLight ? 'text-slate-500' : 'text-[#9C9DA3]'
+                }`}>
+                  {t.staffAccessDesc}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={onOpenAdminAccess || onExitCustomerMode}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 shrink-0 shadow-md ${
+                isLight
+                  ? 'bg-slate-900 hover:bg-slate-800 text-white'
+                  : 'bg-[#39FFB0] hover:opacity-90 text-black font-extrabold'
+              }`}
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              <span>{t.openStaffPos}</span>
+              <ArrowRight className={`w-3.5 h-3.5 ${isAr ? 'rotate-180' : ''}`} />
+            </button>
           </div>
         )}
 
@@ -1474,6 +1746,155 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
                               : 'bg-[#060A12] border-[#1E293B] text-white placeholder-slate-500 focus:border-amber-400'
                           }`}
                         />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Qatar Payment Options */}
+                  <div className={`pt-3 border-t ${isLight ? 'border-slate-200' : 'border-[#1E293B]'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className={`block text-[11px] font-bold uppercase tracking-wider ${
+                        isLight ? 'text-slate-600' : 'text-[#9C9DA3]'
+                      }`}>
+                        {t.paymentOption}
+                      </label>
+                      <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-400/15 border border-amber-400/30 text-amber-500">
+                        QATAR 🇶🇦
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      {/* Cash on Delivery */}
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('cod')}
+                        className={`p-2 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center gap-1 ${
+                          paymentMethod === 'cod'
+                            ? (isLight ? 'bg-amber-50 border-amber-500 text-amber-950 font-bold shadow-sm' : 'bg-amber-400/15 border-amber-400 text-amber-300 font-bold shadow-sm')
+                            : (isLight ? 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300' : 'bg-[#060A12] border-[#1E293B] text-slate-400 hover:border-slate-700')
+                        }`}
+                      >
+                        <Banknote className="w-4 h-4 shrink-0" />
+                        <span className="text-[11px] leading-tight font-semibold">{isAr ? 'عند الاستلام' : 'Cash (COD)'}</span>
+                      </button>
+
+                      {/* Fawran (30606701) */}
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('fawran')}
+                        className={`p-2 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center gap-0.5 relative ${
+                          paymentMethod === 'fawran'
+                            ? 'bg-emerald-600 border-emerald-500 text-white font-bold shadow-sm'
+                            : (isLight ? 'bg-slate-50 border-slate-200 text-slate-600 hover:border-emerald-300' : 'bg-[#060A12] border-[#1E293B] text-slate-400 hover:border-emerald-500/50')
+                        }`}
+                      >
+                        <div className="flex items-center gap-1">
+                          <Zap className="w-3.5 h-3.5 fill-current shrink-0 text-amber-300" />
+                          <span className="text-[11px] leading-tight font-extrabold">{isAr ? 'فوران' : 'Fawran'}</span>
+                        </div>
+                        <span className="text-[9px] font-mono leading-none opacity-90 font-bold">30606701</span>
+                      </button>
+
+                      {/* Bank Transfer */}
+                      <button
+                        type="button"
+                        onClick={() => setPaymentMethod('bank_transfer')}
+                        className={`p-2 rounded-xl border text-center transition cursor-pointer flex flex-col items-center justify-center gap-1 ${
+                          paymentMethod === 'bank_transfer'
+                            ? (isLight ? 'bg-blue-50 border-blue-500 text-blue-950 font-bold shadow-sm' : 'bg-blue-500/20 border-blue-400 text-blue-300 font-bold shadow-sm')
+                            : (isLight ? 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300' : 'bg-[#060A12] border-[#1E293B] text-slate-400 hover:border-slate-700')
+                        }`}
+                      >
+                        <Landmark className="w-4 h-4 shrink-0" />
+                        <span className="text-[11px] leading-tight font-semibold">{isAr ? 'تحويل بنكي' : 'Bank Transfer'}</span>
+                      </button>
+                    </div>
+
+                    {/* Fawran Active Details Box */}
+                    {paymentMethod === 'fawran' && (
+                      <div className={`mt-2.5 p-3 rounded-xl border animate-in fade-in duration-200 text-xs ${
+                        isLight ? 'bg-emerald-50/90 border-emerald-200 text-emerald-950' : 'bg-emerald-950/30 border-emerald-500/30 text-emerald-200'
+                      }`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 font-bold text-xs">
+                            <Zap className="w-3.5 h-3.5 text-emerald-600 dark:text-[#39FFB0] fill-current" />
+                            <span>{isAr ? 'رقم فوران (Fawran):' : 'Fawran Alias:'}</span>
+                            <span className="font-mono text-sm font-black px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                              30606701
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleCopyFawran}
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1 transition cursor-pointer shadow-sm"
+                          >
+                            {fawranCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                            <span>{fawranCopied ? t.copied : t.copy}</span>
+                          </button>
+                        </div>
+                        <p className={`text-[10px] mt-1.5 leading-relaxed ${isLight ? 'text-emerald-800' : 'text-emerald-300/80'}`}>
+                          {t.fawranInstructions}
+                        </p>
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            value={paymentRef}
+                            onChange={(e) => setPaymentRef(e.target.value)}
+                            placeholder={t.paymentRefOptional}
+                            className={`w-full px-2.5 py-1.5 rounded-lg text-xs border focus:outline-none transition ${
+                              isLight ? 'bg-white border-emerald-300 text-slate-800 placeholder-slate-400' : 'bg-black/60 border-emerald-500/30 text-white placeholder-zinc-500'
+                            }`}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Bank Transfer Active Details Box */}
+                    {paymentMethod === 'bank_transfer' && (
+                      <div className={`mt-2.5 p-3 rounded-xl border animate-in fade-in duration-200 text-xs ${
+                        isLight ? 'bg-blue-50/90 border-blue-200 text-blue-950' : 'bg-blue-950/30 border-blue-500/30 text-blue-200'
+                      }`}>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="font-bold flex items-center gap-1.5 text-xs">
+                            <Landmark className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                            <span>{isAr ? 'بنك قطر الوطني (QNB):' : 'QNB Account:'}</span>
+                            <span className="font-mono text-sm font-black px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-700 dark:text-blue-300">
+                              30606701
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleCopyBank}
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-1 transition cursor-pointer shadow-sm"
+                          >
+                            {bankCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                            <span>{bankCopied ? t.copied : t.copy}</span>
+                          </button>
+                        </div>
+                        <p className={`text-[10px] mt-1.5 leading-relaxed ${isLight ? 'text-blue-800' : 'text-blue-300/80'}`}>
+                          {isAr ? 'يرجى تحويل المبلغ ثم إرسال إيصال التحويل عبر واتساب' : 'Please transfer the amount and share the receipt on WhatsApp'}
+                        </p>
+                        <div className="mt-2">
+                          <input
+                            type="text"
+                            value={paymentRef}
+                            onChange={(e) => setPaymentRef(e.target.value)}
+                            placeholder={t.paymentRefOptional}
+                            className={`w-full px-2.5 py-1.5 rounded-lg text-xs border focus:outline-none transition ${
+                              isLight ? 'bg-white border-blue-300 text-slate-800 placeholder-slate-400' : 'bg-black/60 border-blue-500/30 text-white placeholder-zinc-500'
+                            }`}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Cash on Delivery (COD) Active Note */}
+                    {paymentMethod === 'cod' && (
+                      <div className={`mt-2 p-2 rounded-xl border text-[11px] flex items-center gap-2 ${
+                        isLight ? 'bg-slate-50 border-slate-200 text-slate-600' : 'bg-[#060A12] border-[#1E293B] text-slate-400'
+                      }`}>
+                        <Banknote className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                        <span>{t.cashOnDeliveryDesc}</span>
                       </div>
                     )}
                   </div>

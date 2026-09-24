@@ -12,9 +12,11 @@ import {
   Plus,
   Minus,
   Sparkles,
-  Edit2
+  Edit2,
+  Zap,
+  Landmark
 } from 'lucide-react';
-import { Product, CartItem, Discount, Sale } from '../../types';
+import { Product, CartItem, Discount, Sale, PaymentMethod } from '../../types';
 import { BarcodeScannerModal } from './BarcodeScannerModal';
 import { ProductModifierModal } from './ProductModifierModal';
 import { Language, translations } from '../../i18n';
@@ -40,7 +42,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [channel, setChannel] = useState<'instore' | 'online'>('instore');
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [customerPhone, setCustomerPhone] = useState<string>('');
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
   const [discountInput, setDiscountInput] = useState<string>('');
@@ -163,6 +165,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
       subtotal,
       discount: discountObj,
       total,
+      paymentMethod,
       source: 'pos'
     };
 
@@ -544,31 +547,59 @@ export const RegisterView: React.FC<RegisterViewProps> = ({
               </div>
 
               {/* Payment Method Selector */}
-              <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="grid grid-cols-2 gap-1.5 pt-1">
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('cash')}
-                  className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                  className={`py-2 px-2 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
                     paymentMethod === 'cash'
                       ? 'bg-[#1E1E21] border-[#39FFB0] text-[#39FFB0]'
                       : 'bg-[#0F0F12] border-[#1E1E21] text-[#9C9DA3] hover:text-[#F5F5F4]'
                   }`}
                 >
-                  <Banknote className="w-4 h-4" />
+                  <Banknote className="w-4 h-4 shrink-0" />
                   <span>{t.quickCash}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('card')}
-                  className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                  className={`py-2 px-2 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
                     paymentMethod === 'card'
                       ? 'bg-[#1E1E21] border-[#39FFB0] text-[#39FFB0]'
                       : 'bg-[#0F0F12] border-[#1E1E21] text-[#9C9DA3] hover:text-[#F5F5F4]'
                   }`}
                 >
-                  <CreditCard className="w-4 h-4" />
+                  <CreditCard className="w-4 h-4 shrink-0" />
                   <span>{t.cardPayment}</span>
+                </button>
+
+                {/* Fawran (30606701) */}
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('fawran')}
+                  className={`py-2 px-2 rounded-xl border text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
+                    paymentMethod === 'fawran'
+                      ? 'bg-emerald-950/70 border-emerald-400 text-emerald-300'
+                      : 'bg-[#0F0F12] border-[#1E1E21] text-[#9C9DA3] hover:text-[#F5F5F4]'
+                  }`}
+                >
+                  <Zap className="w-3.5 h-3.5 text-amber-300 fill-current shrink-0" />
+                  <span className="truncate">Fawran (30606701)</span>
+                </button>
+
+                {/* Bank Transfer */}
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('bank_transfer')}
+                  className={`py-2 px-2 rounded-xl border text-xs font-bold flex items-center justify-center gap-1 transition cursor-pointer ${
+                    paymentMethod === 'bank_transfer'
+                      ? 'bg-blue-950/70 border-blue-400 text-blue-300'
+                      : 'bg-[#0F0F12] border-[#1E1E21] text-[#9C9DA3] hover:text-[#F5F5F4]'
+                  }`}
+                >
+                  <Landmark className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">{isAr ? 'تحويل بنكي' : 'Bank Transfer'}</span>
                 </button>
               </div>
 

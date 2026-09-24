@@ -519,6 +519,28 @@ export const OrdersView: React.FC<OrdersViewProps> = ({
                         ? (isAr ? `🍽️ تناول بالمطعم: ${order.tableName || `طاولة ${order.tableNumber || order.tableId}`}` : `🍽️ Dine-in: ${order.tableName || `Table ${order.tableNumber || order.tableId}`}`)
                         : (isAr ? '🏬 استلام من المتجر' : '🏬 Pickup in-store'))}
                   </span>
+                  {order.paymentMethod && (
+                    <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold">
+                      {order.paymentMethod === 'fawran' && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                          <span>⚡</span>
+                          <span>Fawran: 30606701 {order.paymentReference ? `(${order.paymentReference})` : ''}</span>
+                        </span>
+                      )}
+                      {order.paymentMethod === 'bank_transfer' && (
+                        <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/40 flex items-center gap-1">
+                          <span>🏦</span>
+                          <span>Bank Transfer {order.paymentReference ? `(${order.paymentReference})` : ''}</span>
+                        </span>
+                      )}
+                      {order.paymentMethod === 'cod' && (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1">
+                          <span>💵</span>
+                          <span>{isAr ? 'عند الاستلام (كاش)' : 'Cash (COD)'}</span>
+                        </span>
+                      )}
+                    </span>
+                  )}
                 </div>
 
                 {/* INTERACTIVE STATUS PROGRESS STEPPER */}

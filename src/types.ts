@@ -62,6 +62,8 @@ export interface StatusHistory {
   note?: string;
 }
 
+export type PaymentMethod = 'cod' | 'fawran' | 'bank_transfer' | 'cash' | 'card' | 'online';
+
 export interface Order {
   id: string;
   timestamp: number;
@@ -69,6 +71,8 @@ export interface Order {
   customerPhone?: string;
   deliveryMethod: 'pickup' | 'delivery' | 'dine_in';
   deliveryAddress?: string;
+  paymentMethod?: PaymentMethod;
+  paymentReference?: string;
   tableId?: string;
   tableName?: string;
   tableNumber?: string;
@@ -93,9 +97,10 @@ export interface Sale {
   customerName?: string;
   deliveryMethod?: 'pickup' | 'delivery' | 'dine_in';
   deliveryAddress?: string;
+  paymentMethod?: PaymentMethod;
+  paymentReference?: string;
   tableId?: string;
   tableName?: string;
-  paymentMethod?: 'cash' | 'card' | 'online';
   items: CartItem[];
   subtotal: number;
   discount: Discount;

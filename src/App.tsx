@@ -20,7 +20,8 @@ import {
   ShieldCheck,
   Sun,
   Moon,
-  Smartphone
+  Smartphone,
+  Store
 } from 'lucide-react';
 import { useTheme } from './ThemeContext';
 import { Product, Order, Sale, DashboardStats, DiningTable, CashShift } from './types';
@@ -109,9 +110,14 @@ export const App: React.FC = () => {
   const [customerMode, setCustomerMode] = useState<boolean>(() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      return params.get('customer') === '1';
+      // If someone explicitly specified ?admin=1 or ?pos=1 or ?staff=1, open Admin/POS
+      if (params.get('admin') === '1' || params.get('pos') === '1' || params.get('staff') === '1') {
+        return false;
+      }
+      // Customer menu is visible by default when opening on web or phone!
+      return true;
     } catch {
-      return false;
+      return true;
     }
   });
   const [globalScannerOpen, setGlobalScannerOpen] = useState<boolean>(false);
@@ -667,20 +673,17 @@ export const App: React.FC = () => {
     }, 150);
   };
 
-  // Switch to standalone Customer Self-Order view
+  // Switch to standalone Customer Self-Order view (Default for all website & mobile visitors)
   if (customerMode) {
     return (
       <CustomerOrderView
         products={products}
         orders={orders}
         onSubmitOrder={handleCustomerSubmitOrder}
-        onExitCustomerMode={isUrlCustomerMode ? undefined : () => {
-          setIsAdminUnlocked(false);
-          try {
-            sessionStorage.removeItem('nasapp_admin_session');
-          } catch (e) {
-            console.warn(e);
-          }
+        onOpenAdminAccess={() => {
+          setCustomerMode(false);
+        }}
+        onExitCustomerMode={() => {
           setCustomerMode(false);
         }}
         lang={lang}
@@ -754,6 +757,25 @@ export const App: React.FC = () => {
 
             <PWAInstallButton lang={lang} variant="header" />
           </div>
+
+          {/* Quick Switch to Customer Store Menu */}
+          <button
+            onClick={() => setCustomerMode(true)}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer border shadow-sm ${
+              isLight
+                ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800'
+                : 'bg-[#151517] hover:bg-[#1E1E21] border-[#39FFB0]/40 text-[#39FFB0]'
+            }`}
+            title={isAr ? 'عرض وتصفح متجر العملاء' : 'Switch to Customer Store Menu'}
+          >
+            <div className="flex items-center gap-2">
+              <Store className="w-4 h-4 text-emerald-600 dark:text-[#39FFB0]" />
+              <span>{isAr ? 'قائمة متجر العملاء' : 'Customer Menu'}</span>
+            </div>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 border border-emerald-500/30 text-emerald-500 font-bold">
+              LIVE
+            </span>
+          </button>
 
           {/* Bilingual Language Switcher & Modern Theme Switcher */}
           <div className="grid grid-cols-2 gap-2">

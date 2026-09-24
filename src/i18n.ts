@@ -112,6 +112,12 @@ export interface TranslationDict {
   appCreation: string;
   installNasApp: string;
 
+  // Staff & Admin Access
+  staffAndAdmin: string;
+  staffAccessDesc: string;
+  openStaffPos: string;
+  customerMenu: string;
+
   // Customer Self-Order
   welcomeMenu: string;
   welcomeMenuSubtitle: string;
@@ -124,6 +130,21 @@ export interface TranslationDict {
   deliveryAddress: string;
   placeOrderWhatsapp: string;
   orderReceived: string;
+
+  // Qatar Payment Options
+  paymentOption: string;
+  cashOnDelivery: string;
+  cashOnDeliveryDesc: string;
+  fawran: string;
+  fawranDesc: string;
+  fawranNumber: string;
+  fawranInstructions: string;
+  bankTransfer: string;
+  bankTransferDesc: string;
+  bankDetails: string;
+  copy: string;
+  copied: string;
+  paymentRefOptional: string;
   orderReceivedDesc: string;
   orderId: string;
   whatsappConfirmation: string;
@@ -281,6 +302,10 @@ export const translations: Record<Language, TranslationDict> = {
     appCreation: 'NasApp Mobile & Desktop App',
     installNasApp: 'Install NasApp',
     shifts: 'Shifts & Cash Drawer',
+    staffAndAdmin: 'Staff & Admin',
+    staffAccessDesc: 'Access POS Cashier Terminal, Kitchen Orders, Inventory & Shifts',
+    openStaffPos: 'Open Staff POS',
+    customerMenu: 'Customer Store Menu',
 
     welcomeMenu: 'NasApp.qa Express Store',
     welcomeMenuSubtitle: 'Browse our fresh catalogue, customize your items, and order directly',
@@ -293,6 +318,21 @@ export const translations: Record<Language, TranslationDict> = {
     deliveryAddress: 'Building / Street / Zone (Qatar)',
     placeOrderWhatsapp: 'Submit Order via WhatsApp',
     orderReceived: 'Thank you! Order Placed',
+
+    // Qatar Payment Options
+    paymentOption: 'Payment Option (Qatar)',
+    cashOnDelivery: 'Cash on Delivery (COD)',
+    cashOnDeliveryDesc: 'Pay cash in Qatari Riyals (QR) upon delivery or pickup',
+    fawran: 'Fawran Instant Pay (30606701)',
+    fawranDesc: 'Instant transfer via Qatar Central Bank Fawran to 30606701',
+    fawranNumber: 'Fawran Alias: 30606701',
+    fawranInstructions: 'Open your Qatar banking app (QNB, CBQ, Dukhan, Masraf Al Rayan, etc.) ➔ Select Fawran ➔ Transfer to: 30606701',
+    bankTransfer: 'Qatar Local Bank Transfer',
+    bankTransferDesc: 'Direct transfer to local Qatar bank account (QNB)',
+    bankDetails: 'Qatar National Bank (QNB) - Account: 30606701',
+    copy: 'Copy',
+    copied: 'Copied!',
+    paymentRefOptional: 'Transfer Ref / Sender Name (Optional)',
     orderReceivedDesc: 'Your order has been transmitted to our store counter and WhatsApp team.',
     orderId: 'Order ID',
     whatsappConfirmation: 'Chat on WhatsApp',
@@ -446,6 +486,10 @@ export const translations: Record<Language, TranslationDict> = {
     appCreation: 'تطبيق NasApp (جوال وحاسوب)',
     installNasApp: 'تثبيت تطبيق NasApp',
     shifts: 'الورديات ودرج النقد',
+    staffAndAdmin: 'دخول الموظفين والإدارة',
+    staffAccessDesc: 'الوصول إلى شاشة الكاشير، سجل الطلبات، إدارة المخزون، ودرج النقد',
+    openStaffPos: 'دخول نظام الكاشير',
+    customerMenu: 'قائمة المتجر للعملاء',
 
     welcomeMenu: 'متجر ناس آب (NasApp.qa)',
     welcomeMenuSubtitle: 'تصفح قائمة منتجاتنا، خصص طلبك، واطلب مباشرة للاستلام أو التوصيل',
@@ -458,6 +502,21 @@ export const translations: Record<Language, TranslationDict> = {
     deliveryAddress: 'المبنى / الشارع / المنطقة (قطر)',
     placeOrderWhatsapp: 'تأكيد وإرسال الطلب عبر واتساب',
     orderReceived: 'شكراً لك! تم استلام طلبك',
+
+    // Qatar Payment Options
+    paymentOption: 'طريقة الدفع في قطر',
+    cashOnDelivery: 'الدفع عند الاستلام (كاش)',
+    cashOnDeliveryDesc: 'الدفع نقداً بالريال القطري عند الاستلام من المتجر أو مع السائق',
+    fawran: 'فوران للدفع الفوري (30606701)',
+    fawranDesc: 'التحويل الفوري عبر نظام فوران في قطر للرقم 30606701',
+    fawranNumber: 'رقم فوران: 30606701',
+    fawranInstructions: 'افتح تطبيق بنكك في قطر (QNB، البنك التجاري، الريان، دخان، إلخ) ➔ اختر فوران ➔ حوّل إلى: 30606701',
+    bankTransfer: 'تحويل بنكي محلي (قطر)',
+    bankTransferDesc: 'تحويل مباشر للحساب البنكي المحلي (QNB)',
+    bankDetails: 'بنك قطر الوطني (QNB) - الحساب: 30606701',
+    copy: 'نسخ',
+    copied: 'تم النسخ!',
+    paymentRefOptional: 'رقم مرجع الحوالة أو اسم صاحب الحساب (اختياري)',
     orderReceivedDesc: 'تم إرسال تفاصيل طلبك مباشرة للكاشير وفريق خدمة الواتساب.',
     orderId: 'رقم الطلب',
     whatsappConfirmation: 'المحادثة عبر واتساب',
