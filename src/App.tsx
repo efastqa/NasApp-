@@ -19,7 +19,8 @@ import {
   KeyRound,
   ShieldCheck,
   Sun,
-  Moon
+  Moon,
+  Smartphone
 } from 'lucide-react';
 import { useTheme } from './ThemeContext';
 import { Product, Order, Sale, DashboardStats, DiningTable, CashShift } from './types';
@@ -35,6 +36,9 @@ import { CustomerOrderView } from './components/pos/CustomerOrderView';
 import { PrintReceiptArea } from './components/pos/PrintReceiptArea';
 import { BarcodeScannerModal } from './components/pos/BarcodeScannerModal';
 import { BarcodeLabelsView } from './components/pos/BarcodeLabelsView';
+import { AppCreationView } from './components/pos/AppCreationView';
+import { PWAInstallButton } from './components/pwa/PWAInstallButton';
+import { OfflineIndicator } from './components/pwa/OfflineIndicator';
 import { AdminLockScreen } from './components/pos/AdminLockScreen';
 import { AdminSettingsModal } from './components/pos/AdminSettingsModal';
 import { NasappBrandLogo } from './components/NasappBrandLogo';
@@ -92,7 +96,7 @@ export const App: React.FC = () => {
   const isAr = lang === 'ar';
 
   // Navigation State
-  const [activeTab, setActiveTab] = useState<'register' | 'inventory' | 'shifts' | 'orders' | 'sales' | 'dashboard' | 'qr' | 'labels' | 'dev_workbench'>('register');
+  const [activeTab, setActiveTab] = useState<'register' | 'inventory' | 'shifts' | 'orders' | 'sales' | 'dashboard' | 'qr' | 'labels' | 'app_creation' | 'dev_workbench'>('register');
   const [devSubTab, setDevSubTab] = useState<'api_explorer' | 'db_viewer' | 'html_runner' | 'architecture_guide'>('api_explorer');
   const [isUrlCustomerMode, setIsUrlCustomerMode] = useState<boolean>(() => {
     try {
@@ -747,6 +751,8 @@ export const App: React.FC = () => {
                 </p>
               </div>
             </div>
+
+            <PWAInstallButton lang={lang} variant="header" />
           </div>
 
           {/* Bilingual Language Switcher & Modern Theme Switcher */}
@@ -953,6 +959,25 @@ export const App: React.FC = () => {
               </span>
             </button>
 
+            {/* 09 NasApp App Hub / App Creation */}
+            <button
+              onClick={() => setActiveTab('app_creation')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
+                activeTab === 'app_creation'
+                  ? `bg-[#151517] text-[#39FFB0] ${isAr ? 'border-r-3' : 'border-l-3'} border-[#39FFB0]`
+                  : 'text-[#9C9DA3] hover:text-[#F5F5F4] hover:bg-[#151517]/50'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="font-mono text-[10px] text-[#5E5F64]">09</span>
+                <Smartphone className="w-4 h-4 text-[#39FFB0]" />
+                <span className="font-bold">{t.appCreation}</span>
+              </div>
+              <span className="px-1.5 py-0.2 bg-[#39FFB0]/20 text-[#39FFB0] border border-[#39FFB0]/40 rounded text-[9px] font-mono font-bold">
+                APP
+              </span>
+            </button>
+
             {/* Dev API workbench tab */}
             <div className="pt-3">
               <button
@@ -1019,6 +1044,9 @@ export const App: React.FC = () => {
             <ShoppingBag className="w-3.5 h-3.5" />
             <span>{isAr ? 'عرض متجر العملاء' : 'Customer View (Store)'}</span>
           </button>
+
+          {/* Quick Install NasApp App Widget */}
+          <PWAInstallButton lang={lang} variant="sidebar" />
 
           <a
             href="https://wa.me/97477315415?text=Hi%2C%20I%20have%20a%20question"
@@ -1123,7 +1151,7 @@ export const App: React.FC = () => {
           />
         )}
 
-        {/* VIEW 7: THERMAL BARCODE LABELS GENERATOR */}
+        {/* VIEW 8: THERMAL BARCODE LABELS GENERATOR */}
         {activeTab === 'labels' && (
           <BarcodeLabelsView
             products={products}
@@ -1131,7 +1159,14 @@ export const App: React.FC = () => {
           />
         )}
 
-        {/* VIEW 7: DEV WORKBENCH */}
+        {/* VIEW 09: NASAPP APP CREATION & PWA HUB */}
+        {activeTab === 'app_creation' && (
+          <AppCreationView
+            lang={lang}
+          />
+        )}
+
+        {/* VIEW: DEV WORKBENCH */}
         {activeTab === 'dev_workbench' && (
           <div className="space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-[#1E1E21]">
@@ -1206,6 +1241,9 @@ export const App: React.FC = () => {
         onUpdateStoreLogo={handleUpdateStoreLogo}
         theme={theme}
       />
+
+      {/* Real-time Offline Connectivity Status */}
+      <OfflineIndicator lang={lang} />
 
     </div>
   );

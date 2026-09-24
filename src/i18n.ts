@@ -109,6 +109,8 @@ export interface TranslationDict {
   labelSize80mm: string;
   printPreview: string;
   copies: string;
+  appCreation: string;
+  installNasApp: string;
 
   // Customer Self-Order
   welcomeMenu: string;
@@ -276,6 +278,8 @@ export const translations: Record<Language, TranslationDict> = {
     labelSize80mm: '80 mm (Wide Thermal Label)',
     printPreview: 'Live Thermal Print Preview',
     copies: 'copies',
+    appCreation: 'NasApp Mobile & Desktop App',
+    installNasApp: 'Install NasApp',
     shifts: 'Shifts & Cash Drawer',
 
     welcomeMenu: 'NasApp.qa Express Store',
@@ -439,6 +443,8 @@ export const translations: Record<Language, TranslationDict> = {
     labelSize80mm: '80 مم (ملصق حراري عريض)',
     printPreview: 'معاينة الطباعة الحرارية المباشرة',
     copies: 'نسخ',
+    appCreation: 'تطبيق NasApp (جوال وحاسوب)',
+    installNasApp: 'تثبيت تطبيق NasApp',
     shifts: 'الورديات ودرج النقد',
 
     welcomeMenu: 'متجر ناس آب (NasApp.qa)',

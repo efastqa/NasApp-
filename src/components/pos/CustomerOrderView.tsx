@@ -37,6 +37,7 @@ import { ProductModifierModal } from './ProductModifierModal';
 import { Language, translations } from '../../i18n';
 import { NasappBrandLogo } from '../NasappBrandLogo';
 import { useTheme } from '../../ThemeContext';
+import { PWAInstallButton } from '../pwa/PWAInstallButton';
 
 interface CustomerOrderViewProps {
   products: Product[];
@@ -433,6 +434,8 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
               </button>
             )}
 
+            <PWAInstallButton lang={lang} variant="header" />
+
             {onExitCustomerMode && !isDirectCustomerUrl && (
               <button
                 onClick={onExitCustomerMode}
@@ -516,6 +519,11 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
               </div>
             </div>
           </div>
+        )}
+
+        {/* NasApp PWA App Install Banner for Customers */}
+        {!orderSuccessId && (
+          <PWAInstallButton lang={lang} variant="banner" />
         )}
 
         {/* ======================================================== */}
