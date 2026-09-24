@@ -13,8 +13,6 @@ import {
   Zap,
   Globe,
   Tag,
-  ChefHat,
-  Users,
   Banknote,
   Lock,
   Unlock,
@@ -29,8 +27,6 @@ import { Language, translations } from './i18n';
 import { RegisterView } from './components/pos/RegisterView';
 import { InventoryView } from './components/pos/InventoryView';
 import { OrdersView } from './components/pos/OrdersView';
-import { KitchenDisplayView } from './components/pos/KitchenDisplayView';
-import { TableManagementView } from './components/pos/TableManagementView';
 import { ShiftManagementView } from './components/pos/ShiftManagementView';
 import { SalesLogView } from './components/pos/SalesLogView';
 import { DashboardView } from './components/pos/DashboardView';
@@ -96,7 +92,7 @@ export const App: React.FC = () => {
   const isAr = lang === 'ar';
 
   // Navigation State
-  const [activeTab, setActiveTab] = useState<'register' | 'inventory' | 'kds' | 'tables' | 'shifts' | 'orders' | 'sales' | 'dashboard' | 'qr' | 'labels' | 'dev_workbench'>('register');
+  const [activeTab, setActiveTab] = useState<'register' | 'inventory' | 'shifts' | 'orders' | 'sales' | 'dashboard' | 'qr' | 'labels' | 'dev_workbench'>('register');
   const [devSubTab, setDevSubTab] = useState<'api_explorer' | 'db_viewer' | 'html_runner' | 'architecture_guide'>('api_explorer');
   const [isUrlCustomerMode, setIsUrlCustomerMode] = useState<boolean>(() => {
     try {
@@ -120,9 +116,7 @@ export const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>(INITIAL_PRODUCTS);
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
   const [sales, setSales] = useState<Sale[]>(INITIAL_SALES);
-  const [tables, setTables] = useState<DiningTable[]>(INITIAL_TABLES);
   const [shift, setShift] = useState<CashShift>(INITIAL_SHIFT);
-  const [selectedTableForOrder, setSelectedTableForOrder] = useState<DiningTable | null>(null);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [cloudConnected, setCloudConnected] = useState<boolean>(false);
   const [lastPrintSale, setLastPrintSale] = useState<Sale | null>(null);
@@ -276,27 +270,10 @@ export const App: React.FC = () => {
       }
     );
 
-    // 4. Real-time Tables listener
-    const unsubTables = onSnapshot(
-      collection(db, 'tables'),
-      (snapshot) => {
-        if (!snapshot.empty) {
-          const list: DiningTable[] = [];
-          snapshot.forEach((d) => list.push(d.data() as DiningTable));
-          list.sort((a, b) => a.number.localeCompare(b.number));
-          setTables(list);
-        }
-      },
-      (error) => {
-        console.warn('Tables Firestore snapshot note:', error);
-      }
-    );
-
     return () => {
       unsubProducts();
       unsubOrders();
       unsubSales();
-      unsubTables();
     };
   }, []);
 
@@ -536,27 +513,6 @@ export const App: React.FC = () => {
         console.error('Firestore setDoc orders note:', fErr);
       }
 
-      // 3. If this was a table order, update table status and link order
-      const tblNum = orderPayload.tableNumber || orderPayload.tableId;
-      if (tblNum) {
-        const matchedTable = tables.find(t => t.number === tblNum || t.id === tblNum);
-        if (matchedTable) {
-          const tableUpdates: Partial<DiningTable> = {
-            status: 'occupied',
-            activeOrderId: orderId,
-            currentTotal: cleanOrder.total,
-            customerName: cleanOrder.customerName,
-            openedAt: Date.now()
-          };
-          setTables(prev => prev.map(t => t.id === matchedTable.id ? { ...t, ...tableUpdates } : t));
-          try {
-            await setDoc(doc(db, 'tables', matchedTable.id), JSON.parse(JSON.stringify(tableUpdates)), { merge: true });
-          } catch (tErr) {
-            console.warn('Table update error:', tErr);
-          }
-        }
-      }
-
       showToast(isAr ? `✓ تم استلام الطلب #${orderId}` : `✓ Order #${orderId} received!`);
       return cleanOrder;
     } catch (error) {
@@ -653,23 +609,6 @@ export const App: React.FC = () => {
   const handleCreateManualOrder = async (orderData: any): Promise<boolean> => {
     const res = await handleCustomerSubmitOrder({ ...orderData, source: 'staff' });
     return res !== null;
-  };
-
-  // Table Management Handlers
-  const handleUpdateTable = async (id: string, updates: Partial<DiningTable>): Promise<boolean> => {
-    setTables(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-    try {
-      await setDoc(doc(db, 'tables', id), updates, { merge: true });
-    } catch (e) {
-      console.warn('Firestore updateTable note:', e);
-    }
-    return true;
-  };
-
-  const handleOpenTableOrder = (table: DiningTable) => {
-    setSelectedTableForOrder(table);
-    setActiveTab('register');
-    showToast(isAr ? `✓ تم تحديد ${table.name}` : `✓ Selected ${table.name}`);
   };
 
   // Shift & Cash Drawer Handlers
@@ -908,45 +847,7 @@ export const App: React.FC = () => {
               <span className="font-mono text-[10px] text-[#5E5F64]">{products.length}</span>
             </button>
 
-            {/* 03 Kitchen KDS */}
-            <button
-              onClick={() => setActiveTab('kds')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'kds'
-                  ? `bg-[#151517] text-[#39FFB0] ${isAr ? 'border-r-3' : 'border-l-3'} border-[#39FFB0]`
-                  : 'text-[#9C9DA3] hover:text-[#F5F5F4] hover:bg-[#151517]/50'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] text-[#5E5F64]">03</span>
-                <ChefHat className="w-4 h-4 text-[#39FFB0]" />
-                <span className="font-bold">{t.kds}</span>
-              </div>
-              <span className="px-1.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300 text-[9px] font-mono font-bold border border-emerald-500/40">
-                LIVE
-              </span>
-            </button>
-
-            {/* 04 Tables & Floor Plan */}
-            <button
-              onClick={() => setActiveTab('tables')}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                activeTab === 'tables'
-                  ? `bg-[#151517] text-[#B039FF] ${isAr ? 'border-r-3' : 'border-l-3'} border-[#B039FF]`
-                  : 'text-[#9C9DA3] hover:text-[#F5F5F4] hover:bg-[#151517]/50'
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] text-[#5E5F64]">04</span>
-                <Users className="w-4 h-4 text-purple-400" />
-                <span>{t.tables}</span>
-              </div>
-              <span className="font-mono text-[10px] text-purple-300">
-                {tables.filter(t => t.status === 'occupied').length}/{tables.length}
-              </span>
-            </button>
-
-            {/* 05 Shifts & Cash Drawer */}
+            {/* 03 Shifts & Cash Drawer */}
             <button
               onClick={() => setActiveTab('shifts')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
@@ -956,14 +857,14 @@ export const App: React.FC = () => {
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] text-[#5E5F64]">05</span>
+                <span className="font-mono text-[10px] text-[#5E5F64]">03</span>
                 <Banknote className="w-4 h-4 text-[#39FFB0]" />
                 <span>{t.shifts}</span>
               </div>
               <span className={`w-2 h-2 rounded-full ${shift.status === 'open' ? 'bg-[#39FFB0]' : 'bg-red-500'}`}></span>
             </button>
 
-            {/* 06 Live Orders Queue */}
+            {/* 04 Live Orders Queue */}
             <button
               onClick={() => setActiveTab('orders')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
@@ -973,7 +874,7 @@ export const App: React.FC = () => {
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] text-[#5E5F64]">06</span>
+                <span className="font-mono text-[10px] text-[#5E5F64]">04</span>
                 <ClipboardList className="w-4 h-4" />
                 <span>{t.orders}</span>
               </div>
@@ -984,7 +885,7 @@ export const App: React.FC = () => {
               )}
             </button>
 
-            {/* 07 Sales Log & Receipts */}
+            {/* 05 Sales Log & Receipts */}
             <button
               onClick={() => setActiveTab('sales')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
@@ -994,14 +895,14 @@ export const App: React.FC = () => {
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] text-[#5E5F64]">07</span>
+                <span className="font-mono text-[10px] text-[#5E5F64]">05</span>
                 <History className="w-4 h-4" />
                 <span>{t.sales}</span>
               </div>
               <span className="font-mono text-[10px] text-[#5E5F64]">{sales.length}</span>
             </button>
 
-            {/* 08 Dashboard Analytics */}
+            {/* 06 Dashboard Analytics */}
             <button
               onClick={() => setActiveTab('dashboard')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
@@ -1011,13 +912,13 @@ export const App: React.FC = () => {
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] text-[#5E5F64]">08</span>
+                <span className="font-mono text-[10px] text-[#5E5F64]">06</span>
                 <BarChart3 className="w-4 h-4" />
                 <span>{t.dashboard}</span>
               </div>
             </button>
 
-            {/* 09 Customer QR Menu */}
+            {/* 07 Customer QR Menu */}
             <button
               onClick={() => setActiveTab('qr')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
@@ -1027,13 +928,13 @@ export const App: React.FC = () => {
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] text-[#5E5F64]">09</span>
+                <span className="font-mono text-[10px] text-[#5E5F64]">07</span>
                 <QrCode className="w-4 h-4" />
                 <span>{t.qrCode}</span>
               </div>
             </button>
 
-            {/* 10 Barcode Labels */}
+            {/* 08 Barcode Labels */}
             <button
               onClick={() => setActiveTab('labels')}
               className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
@@ -1043,7 +944,7 @@ export const App: React.FC = () => {
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <span className="font-mono text-[10px] text-[#5E5F64]">10</span>
+                <span className="font-mono text-[10px] text-[#5E5F64]">08</span>
                 <Tag className="w-4 h-4 text-[#39FFB0]" />
                 <span>{t.barcodeLabels}</span>
               </div>
@@ -1174,27 +1075,7 @@ export const App: React.FC = () => {
           />
         )}
 
-        {/* VIEW 3: KITCHEN DISPLAY SYSTEM (KDS) */}
-        {activeTab === 'kds' && (
-          <KitchenDisplayView
-            orders={orders}
-            onUpdateOrderStatus={handleUpdateOrderStatus}
-            lang={lang}
-          />
-        )}
-
-        {/* VIEW 4: TABLE MANAGEMENT & FLOOR PLAN */}
-        {activeTab === 'tables' && (
-          <TableManagementView
-            tables={tables}
-            orders={orders}
-            onUpdateTable={handleUpdateTable}
-            onOpenTableOrder={handleOpenTableOrder}
-            lang={lang}
-          />
-        )}
-
-        {/* VIEW 5: SHIFT & CASH DRAWER MANAGEMENT */}
+        {/* VIEW 3: SHIFT & CASH DRAWER MANAGEMENT */}
         {activeTab === 'shifts' && (
           <ShiftManagementView
             shift={shift}

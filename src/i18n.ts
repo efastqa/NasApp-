@@ -98,8 +98,6 @@ export interface TranslationDict {
   selectProductToPrint: string;
   customizeLabel: string;
   showPrice: string;
-  kds: string;
-  tables: string;
   shifts: string;
   showBarcode: string;
   showBrand: string;
@@ -278,8 +276,6 @@ export const translations: Record<Language, TranslationDict> = {
     labelSize80mm: '80 mm (Wide Thermal Label)',
     printPreview: 'Live Thermal Print Preview',
     copies: 'copies',
-    kds: 'Kitchen KDS',
-    tables: 'Tables & Floor',
     shifts: 'Shifts & Cash Drawer',
 
     welcomeMenu: 'NasApp.qa Express Store',
@@ -443,8 +439,6 @@ export const translations: Record<Language, TranslationDict> = {
     labelSize80mm: '80 مم (ملصق حراري عريض)',
     printPreview: 'معاينة الطباعة الحرارية المباشرة',
     copies: 'نسخ',
-    kds: 'شاشة المطبخ (KDS)',
-    tables: 'الطاولات والصالة',
     shifts: 'الورديات ودرج النقد',
 
     welcomeMenu: 'متجر ناس آب (NasApp.qa)',

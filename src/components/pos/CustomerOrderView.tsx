@@ -98,30 +98,7 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [search, setSearch] = useState<string>('');
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [urlTableNumber] = useState<string | null>(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('table') || null;
-    } catch {
-      return null;
-    }
-  });
-  const [urlSection] = useState<string | null>(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('section') || null;
-    } catch {
-      return null;
-    }
-  });
-  const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'delivery' | 'dine_in'>(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('table') ? 'dine_in' : 'pickup';
-    } catch {
-      return 'pickup';
-    }
-  });
+  const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'delivery'>('pickup');
   const [customerName, setCustomerName] = useState<string>('');
   const [customerPhone, setCustomerPhone] = useState<string>('');
   const [address, setAddress] = useState<string>('');
@@ -267,18 +244,13 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
     setSubmitting(true);
     const resolvedDeliveryAddress = deliveryMethod === 'delivery' 
       ? address.trim() 
-      : (deliveryMethod === 'dine_in' 
-        ? (urlTableNumber ? `Table ${urlTableNumber}` : 'Dine-In') 
-        : 'Pickup in-store');
+      : 'Pickup in-store';
 
     const payload = {
-      customerName: customerName.trim() || (urlTableNumber ? `Guest (${urlTableNumber})` : (isAr ? 'عميل' : 'Valued Customer')),
+      customerName: customerName.trim() || (isAr ? 'عميل' : 'Valued Customer'),
       customerPhone: customerPhone.trim(),
       deliveryMethod,
       deliveryAddress: resolvedDeliveryAddress,
-      tableNumber: urlTableNumber || undefined,
-      tableId: urlTableNumber || undefined,
-      tableName: urlTableNumber ? `Table ${urlTableNumber}` : undefined,
       items: cart,
       subtotal,
       discount: { type: 'fixed', value: 0, amount: 0 },
@@ -304,9 +276,7 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
 
         const deliveryText = deliveryMethod === 'delivery' 
           ? (isAr ? `🚚 توصيل للمنزل: ${address} (+10.00 ر.ق)` : `🚚 Delivery to: ${address} (+QR 10.00)`)
-          : (deliveryMethod === 'dine_in'
-            ? (isAr ? `🍽️ تناول بالمطعم (طاولة ${urlTableNumber || ''})` : `🍽️ Dine-in Table ${urlTableNumber || ''}`)
-            : (isAr ? '🏬 استلام من المتجر' : '🏬 In-store Pickup'));
+          : (isAr ? '🏬 استلام من المتجر' : '🏬 In-store Pickup');
         
         const trackingUrl = `${window.location.origin}${window.location.pathname}?customer=1&track=${created.id}`;
 
@@ -483,35 +453,6 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
       {/* Main Container */}
       <div className={`flex-1 max-w-5xl w-full mx-auto p-4 sm:p-6 space-y-6 ${cart.length > 0 && !orderSuccessId ? 'pb-28' : ''}`}>
         
-        {/* ======================================================== */}
-        {/* SEATED AT TABLE BANNER (WHEN SCANNED FROM TABLE QR)      */}
-        {/* ======================================================== */}
-        {urlTableNumber && !orderSuccessId && (
-          <div className={`p-4 rounded-3xl border flex items-center justify-between gap-3 shadow-md animate-in fade-in duration-200 ${
-            isLight 
-              ? 'bg-emerald-50/90 border-emerald-300 text-emerald-950' 
-              : 'bg-emerald-950/40 border-[#39FFB0]/40 text-[#F5F5F4]'
-          }`}>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#39FFB0] text-[#04120C] flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
-                {urlTableNumber}
-              </div>
-              <div>
-                <h3 className="font-bold text-xs sm:text-sm text-[#F5F5F4]">
-                  {isAr ? `أهلاً بك! أنت جالس على طاولة ${urlTableNumber}` : `Welcome! Seated at Table ${urlTableNumber}`}
-                  {urlSection && <span className="text-[11px] text-[#39FFB0] font-normal mx-2">({urlSection})</span>}
-                </h3>
-                <p className={`text-[11px] ${isLight ? 'text-emerald-800' : 'text-[#9C9DA3]'}`}>
-                  {isAr ? 'اختر طلباتك وسيتم إرسالها فوراً إلى المطبخ والكاشير برقم طاولتك.' : 'Choose your items and submit; orders route directly to POS & kitchen for this table.'}
-                </p>
-              </div>
-            </div>
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#39FFB0]/20 text-[#39FFB0] border border-[#39FFB0]/30 whitespace-nowrap">
-              {isAr ? 'تناول بالمطعم' : 'Dine-In'}
-            </span>
-          </div>
-        )}
-
         {/* ======================================================== */}
         {/* STORE WELCOME HERO BANNER (WITH BRAND LOGO & INFO)       */}
         {/* ======================================================== */}
@@ -1084,22 +1025,7 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
                   }`}>
                     {t.orderType}
                   </label>
-                  <div className={`grid ${urlTableNumber ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
-                    {urlTableNumber && (
-                      <button
-                        type="button"
-                        onClick={() => setDeliveryMethod('dine_in')}
-                        className={`p-2.5 rounded-xl border text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5 ${
-                          deliveryMethod === 'dine_in'
-                            ? (isLight ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-sm' : 'bg-[#1E1E21] border-[#39FFB0] text-[#39FFB0]')
-                            : (isLight ? 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-white' : 'bg-[#000000] border-[#1E1E21] text-[#9C9DA3] hover:text-white')
-                        }`}
-                      >
-                        <span>🍽️</span>
-                        <span>{isAr ? `طاولة ${urlTableNumber}` : `Table ${urlTableNumber}`}</span>
-                      </button>
-                    )}
-
+                  <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setDeliveryMethod('pickup')}
@@ -1312,11 +1238,6 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
                       {totalCartCount} {totalCartCount === 1 ? (isAr ? 'صنف' : 'item') : (isAr ? 'أصناف' : 'items')}
                     </span>
                   </h3>
-                  {urlTableNumber && (
-                    <span className="text-[11px] font-medium text-amber-400">
-                      🍽️ {isAr ? `طاولة ${urlTableNumber}` : `Table ${urlTableNumber}`}
-                    </span>
-                  )}
                 </div>
               </div>
 
@@ -1468,22 +1389,7 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
                     }`}>
                       {t.orderType}
                     </label>
-                    <div className={`grid ${urlTableNumber ? 'grid-cols-3' : 'grid-cols-2'} gap-2`}>
-                      {urlTableNumber && (
-                        <button
-                          type="button"
-                          onClick={() => setDeliveryMethod('dine_in')}
-                          className={`p-2.5 rounded-xl border text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5 ${
-                            deliveryMethod === 'dine_in'
-                              ? 'bg-amber-400 text-slate-950 border-amber-500 font-bold shadow-sm'
-                              : (isLight ? 'bg-slate-50 border-slate-200 text-slate-600' : 'bg-[#060A12] border-[#1E293B] text-slate-400')
-                          }`}
-                        >
-                          <span>🍽️</span>
-                          <span>{isAr ? `طاولة ${urlTableNumber}` : `Table ${urlTableNumber}`}</span>
-                        </button>
-                      )}
-
+                    <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => setDeliveryMethod('pickup')}
