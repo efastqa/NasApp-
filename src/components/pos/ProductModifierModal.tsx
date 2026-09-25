@@ -167,18 +167,28 @@ export const ProductModifierModal: React.FC<ProductModifierModalProps> = ({
           isLight ? 'bg-slate-50 border-slate-200' : 'bg-[#0F0F12] border-[#1E1E21]'
         }`}>
           <div className="flex items-center gap-3">
-            {product.image ? (
-              <img src={product.image} alt={product.name} className={`w-12 h-12 rounded-xl object-cover border ${isLight ? 'border-slate-200' : 'border-[#1E1E21]'}`} />
-            ) : (
-              <div className={`w-12 h-12 rounded-xl border flex items-center justify-center font-bold text-sm ${
-                isLight ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-[#151517] border-[#1E1E21] text-[#39FFB0]'
-              }`}>
-                <Sparkles className={`w-5 h-5 ${isLight ? 'text-emerald-600' : 'text-[#39FFB0]'}`} />
-              </div>
-            )}
+            <div className={`w-14 h-14 rounded-2xl overflow-hidden shrink-0 border shadow-sm ${
+              isLight ? 'border-slate-200 bg-slate-100' : 'border-[#1E1E21] bg-black'
+            }`}>
+              <img 
+                src={product.image && product.image.trim() 
+                  ? product.image 
+                  : (product.category?.toLowerCase().includes('bev') || product.name.toLowerCase().includes('karak')
+                    ? 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=600&q=80'
+                    : product.category?.toLowerCase().includes('food') || product.name.toLowerCase().includes('burger')
+                    ? 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80'
+                    : 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80')
+                } 
+                alt={product.name} 
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80';
+                }}
+                className="w-full h-full object-cover" 
+              />
+            </div>
             <div>
               <span className={`text-[10px] uppercase font-mono tracking-wider block font-semibold ${
-                isLight ? 'text-emerald-700' : 'text-[#5E5F64]'
+                isLight ? 'text-emerald-700' : 'text-[#39FFB0]'
               }`}>
                 {product.category || 'Store'}
               </span>

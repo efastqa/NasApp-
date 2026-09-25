@@ -13,7 +13,10 @@ import {
   CheckCircle2,
   Globe,
   Sun,
-  Moon
+  Moon,
+  RotateCcw,
+  Sparkles,
+  HelpCircle
 } from 'lucide-react';
 import { Language, translations } from '../../i18n';
 import { NasappBrandLogo } from '../NasappBrandLogo';
@@ -54,6 +57,24 @@ export const AdminLockScreen: React.FC<AdminLockScreenProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isChangingPin, setIsChangingPin] = useState<boolean>(false);
+
+  // Admin Reset Password & Recovery States
+  const [isResettingPin, setIsResettingPin] = useState<boolean>(false);
+  const [masterKeyInput, setMasterKeyInput] = useState<string>('');
+  const [resetNewPin, setResetNewPin] = useState<string>('');
+  const [resetConfirmPin, setResetConfirmPin] = useState<string>('');
+  const [resetSuccessMsg, setResetSuccessMsg] = useState<string | null>(null);
+
+  // Master emergency security keys accepted for administrative recovery:
+  const MASTER_RECOVERY_KEYS = [
+    '9740',
+    '974',
+    'NASAPP-SUPERADMIN-974',
+    'NASAPP-974',
+    'efastqa@gmail.com',
+    'admin@nasapp.qa',
+    '1234'
+  ];
 
   // Pin change form states
   const [currentPinInput, setCurrentPinInput] = useState<string>('');
@@ -102,7 +123,7 @@ export const AdminLockScreen: React.FC<AdminLockScreenProps> = ({
       setErrorMsg(null);
       onUnlock();
     } else {
-      setErrorMsg(isAr ? 'رمز المرور غير صحيح، يرجى المحاولة مرة أخرى' : 'Incorrect PIN / Password. Try again.');
+      setErrorMsg(isAr ? 'رمز المرور غير صحيح، يرجى المحاولة مرة أخرى أو النقر على "استعادة كلمة المرور"' : 'Incorrect PIN. Try again or click "Forgot PIN / Reset Password" below.');
       setEnteredPin('');
     }
   };
@@ -110,7 +131,7 @@ export const AdminLockScreen: React.FC<AdminLockScreenProps> = ({
   // Keyboard event listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isChangingPin) return; // ignore if user typing in form
+      if (isChangingPin || isResettingPin) return; // ignore if user typing in form
 
       if (/^[0-9]$/.test(e.key)) {
         handleKeyPress(e.key);
@@ -125,7 +146,63 @@ export const AdminLockScreen: React.FC<AdminLockScreenProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [enteredPin, isChangingPin]);
+  }, [enteredPin, isChangingPin, isResettingPin]);
+
+  // Master Recovery Reset Submission
+  const handleMasterResetSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+
+    const enteredKey = masterKeyInput.trim().toLowerCase();
+    const isMasterValid = MASTER_RECOVERY_KEYS.some(k => k.toLowerCase() === enteredKey);
+
+    if (!isMasterValid) {
+      setErrorMsg(t.masterKeyInvalid || (isAr ? 'مفتاح الاستعادة غير صحيح، يرجى التحقق والمحاولة ثانية' : 'Invalid Master Recovery Key. Please try again.'));
+      return;
+    }
+
+    if (resetNewPin.length < 4) {
+      setErrorMsg(isAr ? 'الرمز الجديد يجب أن يتكون من 4 أرقام على الأقل' : 'New PIN must be at least 4 digits');
+      return;
+    }
+
+    if (resetNewPin !== resetConfirmPin) {
+      setErrorMsg(isAr ? 'تأكيد الرمز الجديد غير متطابق' : 'New PIN and confirmation do not match');
+      return;
+    }
+
+    try {
+      localStorage.setItem('nasapp_admin_pin', resetNewPin);
+      setResetSuccessMsg(t.resetPinSuccess || (isAr ? '✓ تم استعادة وإعادة تعيين رمز المشرف بنجاح!' : '✓ Admin Security PIN has been reset successfully!'));
+      setErrorMsg(null);
+      setTimeout(() => {
+        setIsResettingPin(false);
+        setResetSuccessMsg(null);
+        setMasterKeyInput('');
+        setResetNewPin('');
+        setResetConfirmPin('');
+        onUnlock();
+      }, 1000);
+    } catch {
+      setErrorMsg(isAr ? 'تعذر الحفظ في الذاكرة' : 'Could not save to local storage');
+    }
+  };
+
+  // Instant Reset to Factory Default PIN (1234)
+  const handleRestoreDefaultPin = () => {
+    try {
+      localStorage.setItem('nasapp_admin_pin', '1234');
+      setResetSuccessMsg(isAr ? '✓ تم استعادة الرمز الافتراضي (1234) بنجاح! يتم الآن فتح لوحة التحكم...' : '✓ Default PIN (1234) restored successfully! Unlocking POS...');
+      setErrorMsg(null);
+      setTimeout(() => {
+        setIsResettingPin(false);
+        setResetSuccessMsg(null);
+        onUnlock();
+      }, 1000);
+    } catch {
+      setErrorMsg(isAr ? 'تعذر إعادة تعيين الرمز' : 'Could not reset PIN');
+    }
+  };
 
   const handleChangePinSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -248,7 +325,170 @@ export const AdminLockScreen: React.FC<AdminLockScreenProps> = ({
         isLight ? 'bg-white border-slate-200 shadow-slate-200/60' : 'bg-[#0A0A0B] border-[#1E1E21]'
       }`}>
         
-        {!isChangingPin ? (
+        {isResettingPin ? (
+          /* ======================================================== */
+          /* ADMIN RESET PASSWORD & RECOVERY PANEL                    */
+          /* ======================================================== */
+          <div className="space-y-4">
+            <div className="text-center space-y-1">
+              <div className={`w-12 h-12 rounded-2xl mx-auto flex items-center justify-center border shadow-sm ${
+                isLight ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-amber-950/40 border-amber-500/30 text-amber-400'
+              }`}>
+                <RotateCcw className="w-6 h-6" />
+              </div>
+              <h3 className={`font-black text-base ${isLight ? 'text-slate-900' : 'text-white'}`}>
+                {t.resetAdminPinTitle}
+              </h3>
+              <p className={`text-[11px] ${isLight ? 'text-slate-500' : 'text-[#9C9DA3]'}`}>
+                {t.resetAdminPinDesc}
+              </p>
+            </div>
+
+            {resetSuccessMsg && (
+              <div className={`p-3 rounded-2xl border text-xs flex items-center gap-2 animate-in zoom-in-95 ${
+                isLight ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'
+              }`}>
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+                <span className="font-bold">{resetSuccessMsg}</span>
+              </div>
+            )}
+
+            {errorMsg && (
+              <div className={`p-2.5 rounded-xl border text-xs flex items-center gap-2 ${
+                isLight ? 'bg-red-50 border-red-200 text-red-700' : 'bg-red-950/40 border-red-500/40 text-red-300'
+              }`}>
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            {/* Quick One-Click Factory Reset to 1234 Button */}
+            <div className={`p-3.5 rounded-2xl border space-y-2 ${
+              isLight ? 'bg-amber-50/70 border-amber-200 text-amber-950' : 'bg-amber-950/20 border-amber-500/30 text-amber-200'
+            }`}>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span>{t.restoreDefaultPin}</span>
+                </span>
+                <span className="font-mono text-xs font-black px-2 py-0.5 rounded-md bg-amber-400 text-slate-950">
+                  1234
+                </span>
+              </div>
+              <p className="text-[10px] opacity-80">
+                {t.restoreDefaultPinDesc}
+              </p>
+              <button
+                type="button"
+                onClick={handleRestoreDefaultPin}
+                className="w-full py-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 active:scale-98 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
+              >
+                <RotateCcw className="w-3.5 h-3.5 stroke-[2.5]" />
+                <span>{t.confirmRestoreDefault}</span>
+              </button>
+            </div>
+
+            {/* Master Key Custom Reset Option */}
+            <form onSubmit={handleMasterResetSubmit} className="space-y-3 pt-2 border-t border-slate-200 dark:border-[#1E1E21]">
+              <span className={`block text-[11px] font-bold ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
+                {isAr ? 'أو تعيين رمز جديد عبر مفتاح الاستعادة:' : 'Or set a new PIN via Master Recovery Key:'}
+              </span>
+
+              <div>
+                <label className={`block text-[10px] mb-1 font-semibold uppercase ${
+                  isLight ? 'text-slate-500' : 'text-[#9C9DA3]'
+                }`}>
+                  {t.enterMasterKey}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={masterKeyInput}
+                  onChange={(e) => setMasterKeyInput(e.target.value)}
+                  placeholder={t.masterKeyPlaceholder}
+                  className={`w-full px-3 py-2 rounded-xl text-xs outline-none border transition ${
+                    isLight 
+                      ? 'bg-slate-50 border-slate-200 focus:border-amber-500 text-slate-900' 
+                      : 'bg-[#000000] border-[#1E1E21] focus:border-amber-400 text-white'
+                  }`}
+                />
+                <span className={`text-[9px] mt-0.5 block ${isLight ? 'text-slate-400' : 'text-[#5E5F64]'}`}>
+                  {isAr ? 'رمز الطوارئ الافتراضي: 9740 أو بريد المشرف المسجل' : 'Emergency master key: 9740 or registered admin email'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className={`block text-[10px] mb-1 font-semibold uppercase ${
+                    isLight ? 'text-slate-500' : 'text-[#9C9DA3]'
+                  }`}>
+                    {isAr ? 'الرمز الجديد (4+)' : 'New PIN (4+)'}
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={resetNewPin}
+                    onChange={(e) => setResetNewPin(e.target.value)}
+                    placeholder="••••"
+                    className={`w-full px-3 py-2 rounded-xl text-xs font-mono outline-none border transition ${
+                      isLight 
+                        ? 'bg-slate-50 border-slate-200 focus:border-emerald-500 text-slate-900' 
+                        : 'bg-[#000000] border-[#1E1E21] focus:border-[#39FFB0] text-white'
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-[10px] mb-1 font-semibold uppercase ${
+                    isLight ? 'text-slate-500' : 'text-[#9C9DA3]'
+                  }`}>
+                    {isAr ? 'تأكيد الرمز' : 'Confirm PIN'}
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    value={resetConfirmPin}
+                    onChange={(e) => setResetConfirmPin(e.target.value)}
+                    placeholder="••••"
+                    className={`w-full px-3 py-2 rounded-xl text-xs font-mono outline-none border transition ${
+                      isLight 
+                        ? 'bg-slate-50 border-slate-200 focus:border-emerald-500 text-slate-900' 
+                        : 'bg-[#000000] border-[#1E1E21] focus:border-[#39FFB0] text-white'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsResettingPin(false);
+                    setErrorMsg(null);
+                  }}
+                  className={`flex-1 py-2.5 border text-xs font-semibold rounded-xl transition cursor-pointer ${
+                    isLight 
+                      ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700' 
+                      : 'bg-[#121215] hover:bg-[#1E1E21] border-[#1E1E21] text-[#9C9DA3]'
+                  }`}
+                >
+                  {isAr ? 'رجوع' : 'Back'}
+                </button>
+
+                <button
+                  type="submit"
+                  className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition cursor-pointer shadow-sm ${
+                    isLight 
+                      ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                      : 'bg-[#39FFB0] hover:opacity-90 text-black'
+                  }`}
+                >
+                  {isAr ? 'تعيين وفتح' : 'Reset & Unlock'}
+                </button>
+              </div>
+            </form>
+          </div>
+        ) : !isChangingPin ? (
           <>
             {/* Lock Header */}
             <div className="text-center space-y-2">
@@ -383,17 +623,35 @@ export const AdminLockScreen: React.FC<AdminLockScreenProps> = ({
               </button>
             </form>
 
-            {/* Change PIN Trigger Link */}
-            <div className={`pt-2 border-t flex items-center justify-between text-xs ${
-              isLight ? 'border-slate-200 text-slate-500' : 'border-[#1E1E21] text-[#5E5F64]'
+            {/* Change PIN & Reset Password Trigger Links */}
+            <div className={`pt-3 border-t flex flex-col sm:flex-row items-center justify-center gap-3 text-xs ${
+              isLight ? 'border-slate-200 text-slate-500' : 'border-[#1E1E21] text-[#9C9DA3]'
             }`}>
               <button
                 type="button"
                 onClick={() => {
-                  setIsChangingPin(true);
+                  setIsResettingPin(true);
+                  setIsChangingPin(false);
                   setErrorMsg(null);
                 }}
-                className={`flex items-center gap-1.5 transition cursor-pointer mx-auto ${
+                className={`flex items-center gap-1.5 transition cursor-pointer font-bold ${
+                  isLight ? 'text-amber-700 hover:text-amber-900' : 'text-amber-400 hover:text-amber-300'
+                }`}
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>{t.forgotAdminPin}</span>
+              </button>
+
+              <span className="hidden sm:inline text-slate-300 dark:text-[#2A2A30]">•</span>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsChangingPin(true);
+                  setIsResettingPin(false);
+                  setErrorMsg(null);
+                }}
+                className={`flex items-center gap-1.5 transition cursor-pointer ${
                   isLight ? 'hover:text-emerald-700' : 'hover:text-[#39FFB0]'
                 }`}
               >
@@ -526,6 +784,22 @@ export const AdminLockScreen: React.FC<AdminLockScreenProps> = ({
                 }`}
               >
                 {isAr ? 'حفظ الرمز' : 'Save PIN'}
+              </button>
+            </div>
+
+            <div className="pt-2 text-center border-t border-slate-100 dark:border-[#1E1E21]">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsChangingPin(false);
+                  setIsResettingPin(true);
+                  setErrorMsg(null);
+                }}
+                className={`text-[11px] font-semibold underline transition cursor-pointer ${
+                  isLight ? 'text-amber-700 hover:text-amber-900' : 'text-amber-400 hover:text-amber-300'
+                }`}
+              >
+                {t.forgotAdminPin}
               </button>
             </div>
           </form>

@@ -35,7 +35,11 @@ import {
   Landmark,
   Copy,
   Zap,
-  X
+  X,
+  Image as ImageIcon,
+  Maximize2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { Product, CartItem, Order } from '../../types';
 import { BarcodeScannerModal } from './BarcodeScannerModal';
@@ -156,6 +160,62 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
   // Modifiers Selection
   const [modifierProduct, setModifierProduct] = useState<Product | null>(null);
   const [editingCartItem, setEditingCartItem] = useState<CartItem | null>(null);
+
+  // Product Images Visibility State (Defaults to visible, can be toggled by customer)
+  const [showProductImages, setShowProductImages] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('customer_show_images');
+      return saved !== null ? saved === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
+
+  const handleToggleShowImages = () => {
+    const next = !showProductImages;
+    setShowProductImages(next);
+    try {
+      localStorage.setItem('customer_show_images', String(next));
+    } catch {}
+  };
+
+  // Image Zoom Lightbox state
+  const [previewImageModal, setPreviewImageModal] = useState<{
+    name: string;
+    price: number;
+    imgUrl: string;
+    category?: string;
+    product?: Product;
+  } | null>(null);
+
+  // Fallback high-resolution food & grocery images if product.image is empty
+  const getProductImage = (prod: Product | { image?: string; name?: string; category?: string }): string => {
+    if (prod.image && prod.image.trim()) {
+      return prod.image;
+    }
+    const name = (prod.name || '').toLowerCase();
+    const cat = (prod.category || '').toLowerCase();
+
+    if (cat.includes('bev') || name.includes('karak') || name.includes('tea') || name.includes('chai') || name.includes('coffee') || name.includes('latte')) {
+      return 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=600&q=80';
+    }
+    if (cat.includes('food') || name.includes('burger') || name.includes('sandwich') || name.includes('angus') || name.includes('meal')) {
+      return 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80';
+    }
+    if (name.includes('popcorn') || cat.includes('snack')) {
+      return 'https://images.unsplash.com/photo-1578849278619-e73505e9610f?auto=format&fit=crop&w=600&q=80';
+    }
+    if (cat.includes('choc') || name.includes('storck') || name.includes('candy') || name.includes('mamba') || name.includes('knoppers') || name.includes('sweet') || name.includes('fruit')) {
+      return 'https://images.unsplash.com/photo-1582293041079-7814c2f12063?auto=format&fit=crop&w=600&q=80';
+    }
+    if (cat.includes('pizza')) {
+      return 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80';
+    }
+    if (cat.includes('dessert') || cat.includes('cake') || cat.includes('pastry') || name.includes('cake')) {
+      return 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=600&q=80';
+    }
+    return 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80';
+  };
 
   const isDirectCustomerUrl = typeof window !== 'undefined' && (new URLSearchParams(window.location.search).get('customer') === '1');
 
@@ -720,20 +780,28 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
                   <span className={`font-mono text-sm font-bold ${isLight ? 'text-emerald-700' : 'text-[#39FFB0]'}`}>{fmt(activeTrackedOrder.total)}</span>
                 </div>
 
-                <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-                  {activeTrackedOrder.items.map((it, iIdx) => (
-                    <div key={iIdx} className="flex items-center justify-between text-xs">
-                      <div className="truncate pr-2">
-                        <span className={`font-medium ${isLight ? 'text-slate-900' : 'text-white'}`}>{it.qty}x {it.name}</span>
-                        {it.selectedModifiers && it.selectedModifiers.length > 0 && (
-                          <span className={`text-[10px] block ${isLight ? 'text-emerald-700' : 'text-[#39FFB0]'}`}>
-                            ↳ {it.selectedModifiers.map(m => m.optionName).join(', ')}
-                          </span>
-                        )}
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                  {activeTrackedOrder.items.map((it, iIdx) => {
+                    const itImg = getProductImage({ name: it.name, image: products.find(p => p.id === it.productId)?.image, category: products.find(p => p.id === it.productId)?.category });
+                    return (
+                      <div key={iIdx} className="flex items-center justify-between text-xs gap-2.5">
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-[#1E1E21] bg-slate-100 dark:bg-black">
+                            <img src={itImg} alt={it.name} className="w-full h-full object-cover" />
+                          </div>
+                          <div className="truncate">
+                            <span className={`font-medium ${isLight ? 'text-slate-900' : 'text-white'}`}>{it.qty}x {it.name}</span>
+                            {it.selectedModifiers && it.selectedModifiers.length > 0 && (
+                              <span className={`text-[10px] block ${isLight ? 'text-emerald-700' : 'text-[#39FFB0]'}`}>
+                                ↳ {it.selectedModifiers.map(m => m.optionName).join(', ')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span className={`font-mono shrink-0 ${isLight ? 'text-slate-600' : 'text-[#9C9DA3]'}`}>{fmt(it.price * it.qty)}</span>
                       </div>
-                      <span className={`font-mono shrink-0 ${isLight ? 'text-slate-600' : 'text-[#9C9DA3]'}`}>{fmt(it.price * it.qty)}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {activeTrackedOrder.deliveryAddress && (
@@ -823,7 +891,7 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
             {/* Catalog (7 cols) */}
             <div className="lg:col-span-7 space-y-4">
               
-              {/* Search and Scan Bar */}
+              {/* Search, Scan and Photo View Toggle Bar */}
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <Search className={`w-4 h-4 absolute ${isAr ? 'right-3.5' : 'left-3.5'} top-3 ${
@@ -841,9 +909,26 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
                     }`}
                   />
                 </div>
+
+                {/* Customer Photo Visibility Option Toggle */}
+                <button
+                  type="button"
+                  onClick={handleToggleShowImages}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition cursor-pointer shrink-0 border shadow-sm ${
+                    showProductImages
+                      ? (isLight ? 'bg-emerald-50 text-emerald-800 border-emerald-300 shadow-emerald-500/10' : 'bg-[#1A2E24] text-[#39FFB0] border-[#39FFB0]/40')
+                      : (isLight ? 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50' : 'bg-[#0A0A0B] text-[#9C9DA3] border-[#1E1E21] hover:text-white')
+                  }`}
+                  title={showProductImages ? t.hideImages : t.showImages}
+                >
+                  <ImageIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">{showProductImages ? t.photosVisible : t.compactView}</span>
+                  <span className="sm:hidden">{showProductImages ? (isAr ? 'الصور' : 'Photos') : (isAr ? 'بدون' : 'Text')}</span>
+                </button>
+
                 <button
                   onClick={() => setScannerOpen(true)}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 shadow-sm border ${
+                  className={`flex items-center gap-1.5 px-3 py-2 sm:px-3.5 rounded-xl text-xs font-semibold transition cursor-pointer shrink-0 shadow-sm border ${
                     isLight 
                       ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-800 shadow-emerald-600/5' 
                       : 'bg-[#1A2E24] hover:bg-[#224032] border-[#39FFB0]/40 text-[#39FFB0] shadow-[#39FFB0]/10'
@@ -851,7 +936,7 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
                   title={t.scanBarcodeBtn}
                 >
                   <Camera className="w-4 h-4" />
-                  <span>{t.scanCode}</span>
+                  <span className="hidden sm:inline">{t.scanCode}</span>
                 </button>
               </div>
 
@@ -873,17 +958,18 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
               </div>
 
               {/* Product Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[600px] overflow-y-auto pr-1">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[620px] overflow-y-auto pr-1">
                 {filtered.map((product) => {
                   const inCartCount = cart.filter(c => c.productId === product.id).reduce((s, i) => s + i.qty, 0);
                   const isOut = product.stock <= 0;
                   const hasModifiers = product.modifierGroups && product.modifierGroups.length > 0;
+                  const productImg = getProductImage(product);
 
                   return (
                     <div
                       key={product.id}
                       onClick={() => !isOut && handleProductSelect(product)}
-                      className={`border rounded-2xl p-3.5 flex flex-col justify-between transition relative select-none shadow-sm ${
+                      className={`border rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between transition relative select-none shadow-sm group ${
                         isOut 
                           ? (isLight ? 'bg-slate-100/70 border-slate-200 opacity-50 cursor-not-allowed' : 'bg-[#0A0A0B] border-red-950/30 opacity-40 cursor-not-allowed')
                           : (isLight 
@@ -892,11 +978,56 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
                       }`}
                     >
                       {inCartCount > 0 && (
-                        <span className={`absolute top-2.5 ${isAr ? 'left-2.5' : 'right-2.5'} px-2 py-0.5 rounded-full font-bold text-[10px] shadow ${
+                        <span className={`absolute top-2.5 ${isAr ? 'left-2.5' : 'right-2.5'} z-10 px-2 py-0.5 rounded-full font-bold text-[10px] shadow ${
                           isLight ? 'bg-emerald-600 text-white' : 'bg-[#39FFB0] text-black'
                         }`}>
                           {inCartCount}x
                         </span>
+                      )}
+
+                      {/* Product Image Container (Visible while ordering) */}
+                      {showProductImages && (
+                        <div className="relative w-full h-28 sm:h-36 rounded-xl overflow-hidden mb-2.5 bg-slate-100 dark:bg-[#151518] group/img shrink-0 border border-slate-100 dark:border-[#1E1E21]/60">
+                          <img
+                            src={productImg}
+                            alt={product.name}
+                            loading="lazy"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80';
+                            }}
+                            className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-105 ${
+                              isOut ? 'grayscale contrast-75' : ''
+                            }`}
+                          />
+
+                          {/* Out of stock banner */}
+                          {isOut && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center p-1">
+                              <span className="px-2 py-1 rounded-lg bg-red-600/90 text-white font-black text-[10px] uppercase tracking-wider shadow">
+                                {t.outOfStock}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Image Zoom button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewImageModal({
+                                name: product.name,
+                                price: product.price,
+                                imgUrl: productImg,
+                                category: product.category,
+                                product
+                              });
+                            }}
+                            className={`absolute bottom-1.5 ${isAr ? 'left-1.5' : 'right-1.5'} p-1.5 rounded-lg bg-black/60 hover:bg-black/85 text-white opacity-0 group-hover:opacity-100 transition cursor-pointer backdrop-blur-sm shadow-md z-10`}
+                            title={isAr ? 'تكبير صورة الصنف' : 'View full product image'}
+                          >
+                            <Maximize2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       )}
 
                       <div>
@@ -1041,11 +1172,19 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
                       <p className="text-[11px] mt-1 opacity-80">{t.emptyCartDesc}</p>
                     </div>
                   ) : (
-                    cart.map((item, idx) => (
+                    cart.map((item, idx) => {
+                      const itemProd = products.find(p => p.id === item.productId);
+                      const itemImg = getProductImage({ name: item.name, image: itemProd?.image, category: itemProd?.category });
+                      return (
                       <div key={idx} className={`p-2.5 rounded-xl text-xs space-y-1 border ${
                         isLight ? 'bg-slate-50 border-slate-200' : 'bg-[#0F0F12] border-[#1E1E21]'
                       }`}>
-                        <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start justify-between gap-2.5">
+                          {/* Item Thumbnail */}
+                          <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-[#1E1E21] bg-slate-100 dark:bg-black mt-0.5">
+                            <img src={itemImg} alt={item.name} className="w-full h-full object-cover" />
+                          </div>
+
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
                               <p className={`font-medium truncate ${isLight ? 'text-slate-900' : 'text-white'}`}>{item.name}</p>
@@ -1119,7 +1258,8 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
                           </div>
                         </div>
                       </div>
-                    ))
+                    );
+                    })
                   )}
                 </div>
 
@@ -1606,13 +1746,21 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
                     </label>
 
                     <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                      {cart.map((item, idx) => (
+                      {cart.map((item, idx) => {
+                        const itemProd = products.find(p => p.id === item.productId);
+                        const itemImg = getProductImage({ name: item.name, image: itemProd?.image, category: itemProd?.category });
+                        return (
                         <div 
                           key={idx} 
                           className={`p-3 rounded-2xl border flex items-center justify-between gap-3 ${
                             isLight ? 'bg-slate-50 border-slate-200' : 'bg-[#060A12] border-[#1E293B]'
                           }`}
                         >
+                          {/* Item Thumbnail */}
+                          <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-[#1E293B] bg-slate-100 dark:bg-black">
+                            <img src={itemImg} alt={item.name} className="w-full h-full object-cover" />
+                          </div>
+
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
                               <p className="font-bold text-xs sm:text-sm truncate">{item.name}</p>
@@ -1686,7 +1834,8 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
                             </button>
                           </div>
                         </div>
-                      ))}
+                      );
+                      })}
                     </div>
                   </div>
 
@@ -2069,6 +2218,88 @@ export const CustomerOrderView: React.FC<CustomerOrderViewProps> = ({
         products={products}
         lang={lang}
       />
+
+      {/* Product Image Lightbox Zoom Modal */}
+      {previewImageModal && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setPreviewImageModal(null)}
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className={`w-full max-w-lg rounded-3xl overflow-hidden border shadow-2xl transition-colors ${
+              isLight ? 'bg-white border-slate-200 text-slate-900' : 'bg-[#0A0A0B] border-[#1E1E21] text-white'
+            }`}
+          >
+            {/* Modal Image */}
+            <div className="relative w-full h-72 sm:h-80 bg-black overflow-hidden flex items-center justify-center">
+              <img 
+                src={previewImageModal.imgUrl} 
+                alt={previewImageModal.name} 
+                className="w-full h-full object-cover" 
+              />
+              <button
+                type="button"
+                onClick={() => setPreviewImageModal(null)}
+                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center transition cursor-pointer backdrop-blur-sm shadow-md"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Modal Info & Actions */}
+            <div className="p-5 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <span className={`text-[10px] uppercase font-mono tracking-wider block font-semibold ${
+                    isLight ? 'text-emerald-700' : 'text-[#39FFB0]'
+                  }`}>
+                    {previewImageModal.category || 'Store'}
+                  </span>
+                  <h3 className="font-extrabold text-base sm:text-lg mt-0.5">
+                    {previewImageModal.name}
+                  </h3>
+                </div>
+                <div className={`text-right font-mono font-black text-base sm:text-lg shrink-0 ${
+                  isLight ? 'text-emerald-700' : 'text-[#39FFB0]'
+                }`}>
+                  {fmt(previewImageModal.price)}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-2 border-t border-slate-100 dark:border-[#1E1E21]">
+                <button
+                  type="button"
+                  onClick={() => setPreviewImageModal(null)}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                    isLight ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700' : 'bg-[#151517] hover:bg-[#1E1E21] border-[#1E1E21] text-slate-300'
+                  }`}
+                >
+                  {isAr ? 'إغلاق' : 'Close'}
+                </button>
+                {previewImageModal.product && (
+                  <button
+                    type="button"
+                    disabled={previewImageModal.product.stock <= 0}
+                    onClick={() => {
+                      handleProductSelect(previewImageModal.product!);
+                      setPreviewImageModal(null);
+                    }}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md cursor-pointer ${
+                      isLight 
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                        : 'bg-[#39FFB0] hover:opacity-90 text-black'
+                    }`}
+                  >
+                    <Plus className="w-4 h-4 stroke-[2.5]" />
+                    <span>{isAr ? 'إضافة إلى السلة' : 'Add to Cart'}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

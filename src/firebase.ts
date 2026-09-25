@@ -72,7 +72,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     price: 3.50, 
     stock: 250, 
     category: 'Beverages', 
-    image: '',
+    image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?auto=format&fit=crop&w=600&q=80',
     modifierGroups: [
       {
         id: 'grp_sugar',
@@ -108,7 +108,7 @@ export const INITIAL_PRODUCTS: Product[] = [
     price: 24.00, 
     stock: 80, 
     category: 'Food', 
-    image: '',
+    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=600&q=80',
     modifierGroups: [
       {
         id: 'grp_combo',
@@ -135,13 +135,13 @@ export const INITIAL_PRODUCTS: Product[] = [
       }
     ]
   },
-  { id: 'p_1', name: 'Storck Alffrucht 425g', sku: 'ZST110DRY00181', price: 16.57, stock: 125, category: 'Chocolate', image: '' },
-  { id: 'p_2', name: 'Storck Paradise Fruits 200g', sku: 'ZST110DRY00187', price: 8.00, stock: 8, category: 'Chocolate', image: '' },
-  { id: 'p_3', name: 'Storck Mamba 6x48x26.5g', sku: 'ZST110DRY00216', price: 1.20, stock: 1248, category: 'Chocolate', image: '' },
-  { id: 'p_4', name: 'Caramel Popcorn 140g', sku: 'ZST110DRY00210', price: 17.50, stock: 2664, category: 'Snacks', image: '' },
-  { id: 'p_5', name: 'Storck Knoppers 6x24x25g', sku: 'ZST110DRY00195', price: 1.94, stock: 703, category: 'Chocolate', image: '' },
-  { id: 'p_6', name: 'Storck Knoppers Minis 12x200g', sku: 'ZST110DRY00222', price: 19.50, stock: 4216, category: 'Chocolate', image: '' },
-  { id: 'p_7', name: 'Storck Mamba Frt/Ch 110g', sku: 'ZST110DRY00178', price: 4.49, stock: 1782, category: 'Chocolate', image: '' }
+  { id: 'p_1', name: 'Storck Alffrucht 425g', sku: 'ZST110DRY00181', price: 16.57, stock: 125, category: 'Chocolate', image: 'https://images.unsplash.com/photo-1582293041079-7814c2f12063?auto=format&fit=crop&w=600&q=80' },
+  { id: 'p_2', name: 'Storck Paradise Fruits 200g', sku: 'ZST110DRY00187', price: 8.00, stock: 8, category: 'Chocolate', image: 'https://images.unsplash.com/photo-1581798459219-318e76aecc7b?auto=format&fit=crop&w=600&q=80' },
+  { id: 'p_3', name: 'Storck Mamba 6x48x26.5g', sku: 'ZST110DRY00216', price: 1.20, stock: 1248, category: 'Chocolate', image: 'https://images.unsplash.com/photo-1575224300306-1b8da36134ec?auto=format&fit=crop&w=600&q=80' },
+  { id: 'p_4', name: 'Caramel Popcorn 140g', sku: 'ZST110DRY00210', price: 17.50, stock: 2664, category: 'Snacks', image: 'https://images.unsplash.com/photo-1578849278619-e73505e9610f?auto=format&fit=crop&w=600&q=80' },
+  { id: 'p_5', name: 'Storck Knoppers 6x24x25g', sku: 'ZST110DRY00195', price: 1.94, stock: 703, category: 'Chocolate', image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=600&q=80' },
+  { id: 'p_6', name: 'Storck Knoppers Minis 12x200g', sku: 'ZST110DRY00222', price: 19.50, stock: 4216, category: 'Chocolate', image: 'https://images.unsplash.com/photo-1549007994-cb92caebd54b?auto=format&fit=crop&w=600&q=80' },
+  { id: 'p_7', name: 'Storck Mamba Frt/Ch 110g', sku: 'ZST110DRY00178', price: 4.49, stock: 1782, category: 'Chocolate', image: 'https://images.unsplash.com/photo-1582293041079-7814c2f12063?auto=format&fit=crop&w=600&q=80' }
 ];
 
 // Initial seeded sales

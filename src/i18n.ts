@@ -205,6 +205,26 @@ export interface TranslationDict {
   mobileMenuToggle: string;
   switchToPos: string;
   switchToCustomer: string;
+
+  // Product Images & Visibility
+  showImages: string;
+  hideImages: string;
+  togglePhotos: string;
+  photosVisible: string;
+  compactView: string;
+
+  // Admin Reset Password
+  forgotAdminPin: string;
+  resetAdminPinTitle: string;
+  resetAdminPinDesc: string;
+  masterRecoveryKey: string;
+  enterMasterKey: string;
+  masterKeyPlaceholder: string;
+  restoreDefaultPin: string;
+  restoreDefaultPinDesc: string;
+  confirmRestoreDefault: string;
+  resetPinSuccess: string;
+  masterKeyInvalid: string;
 }
 
 export const translations: Record<Language, TranslationDict> = {
@@ -404,7 +424,27 @@ export const translations: Record<Language, TranslationDict> = {
     liveSyncDesc: 'Orders and inventory sync live in Qatar real-time via Firestore',
     mobileMenuToggle: 'Navigation Menu',
     switchToPos: 'Open POS Register',
-    switchToCustomer: 'Customer Menu'
+    switchToCustomer: 'Customer Menu',
+
+    // Product Images & Visibility
+    showImages: 'Show Photos',
+    hideImages: 'Hide Photos',
+    togglePhotos: 'Product Photos',
+    photosVisible: 'Photos Visible',
+    compactView: 'Compact View',
+
+    // Admin Reset Password
+    forgotAdminPin: 'Forgot PIN / Reset Password',
+    resetAdminPinTitle: 'Reset Admin Security PIN',
+    resetAdminPinDesc: 'Restore factory PIN (1234) or enter master recovery key to set a new password',
+    masterRecoveryKey: 'Master Recovery Key',
+    enterMasterKey: 'Enter Master Security Key or Admin Email',
+    masterKeyPlaceholder: 'e.g. 9740 or efastqa@gmail.com',
+    restoreDefaultPin: 'Reset to Factory Default (1234)',
+    restoreDefaultPinDesc: 'Instantly resets the Admin PIN back to default 1234',
+    confirmRestoreDefault: 'Confirm Reset to 1234',
+    resetPinSuccess: '✓ Admin Security PIN has been reset successfully!',
+    masterKeyInvalid: 'Invalid Master Recovery Key. Please check and try again.'
   },
 
   ar: {
@@ -603,6 +643,26 @@ export const translations: Record<Language, TranslationDict> = {
     liveSyncDesc: 'يتم تحديث الطلبات والمخزون مباشرة وفورياً عبر فايربيس (قطر)',
     mobileMenuToggle: 'قائمة التنقل',
     switchToPos: 'فتح شاشة الكاشير (POS)',
-    switchToCustomer: 'قائمة المتجر للعميل'
+    switchToCustomer: 'قائمة المتجر للعميل',
+
+    // Product Images & Visibility
+    showImages: 'عرض الصور',
+    hideImages: 'إخفاء الصور',
+    togglePhotos: 'صور المنتجات',
+    photosVisible: 'الصور معروضة',
+    compactView: 'عرض مضغوط بدون صور',
+
+    // Admin Reset Password
+    forgotAdminPin: 'نسيت رمز المرور؟ استعادة كلمة المرور',
+    resetAdminPinTitle: 'استعادة وإعادة تعيين رمز المشرف',
+    resetAdminPinDesc: 'استعادة الرمز الافتراضي (1234) أو إدخال مفتاح الاستعادة الرئيسي لتعيين رمز جديد',
+    masterRecoveryKey: 'مفتاح الاستعادة الرئيسي',
+    enterMasterKey: 'أدخل مفتاح الأمان الرئيسي أو بريد المشرف',
+    masterKeyPlaceholder: 'مثال: 9740 أو efastqa@gmail.com',
+    restoreDefaultPin: 'استعادة الرمز الافتراضي (1234)',
+    restoreDefaultPinDesc: 'إعادة ضبط رمز مرور المشرف فورياً إلى الرمز الافتراضي 1234',
+    confirmRestoreDefault: 'تأكيد الاستعادة إلى 1234',
+    resetPinSuccess: '✓ تم استعادة وإعادة تعيين رمز مرور المشرف بنجاح!',
+    masterKeyInvalid: 'مفتاح الاستعادة الرئيسي غير صحيح، يرجى التحقق والمحاولة ثانية'
   }
 };

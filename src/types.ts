@@ -47,6 +47,7 @@ export interface CartItem {
   completedInKds?: boolean;
   selectedModifiers?: SelectedModifier[];
   notes?: string;
+  image?: string;
 }
 
 export interface Discount {
