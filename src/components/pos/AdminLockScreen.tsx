@@ -72,8 +72,7 @@ export const AdminLockScreen: React.FC<AdminLockScreenProps> = ({
     'NASAPP-SUPERADMIN-974',
     'NASAPP-974',
     'efastqa@gmail.com',
-    'admin@nasapp.qa',
-    '1234'
+    'admin@nasapp.qa'
   ];
 
   // Pin change form states
@@ -185,22 +184,6 @@ export const AdminLockScreen: React.FC<AdminLockScreenProps> = ({
       }, 1000);
     } catch {
       setErrorMsg(isAr ? 'تعذر الحفظ في الذاكرة' : 'Could not save to local storage');
-    }
-  };
-
-  // Instant Reset to Factory Default PIN (1234)
-  const handleRestoreDefaultPin = () => {
-    try {
-      localStorage.setItem('nasapp_admin_pin', '1234');
-      setResetSuccessMsg(isAr ? '✓ تم استعادة الرمز الافتراضي (1234) بنجاح! يتم الآن فتح لوحة التحكم...' : '✓ Default PIN (1234) restored successfully! Unlocking POS...');
-      setErrorMsg(null);
-      setTimeout(() => {
-        setIsResettingPin(false);
-        setResetSuccessMsg(null);
-        onUnlock();
-      }, 1000);
-    } catch {
-      setErrorMsg(isAr ? 'تعذر إعادة تعيين الرمز' : 'Could not reset PIN');
     }
   };
 
@@ -362,38 +345,8 @@ export const AdminLockScreen: React.FC<AdminLockScreenProps> = ({
               </div>
             )}
 
-            {/* Quick One-Click Factory Reset to 1234 Button */}
-            <div className={`p-3.5 rounded-2xl border space-y-2 ${
-              isLight ? 'bg-amber-50/70 border-amber-200 text-amber-950' : 'bg-amber-950/20 border-amber-500/30 text-amber-200'
-            }`}>
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                  <span>{t.restoreDefaultPin}</span>
-                </span>
-                <span className="font-mono text-xs font-black px-2 py-0.5 rounded-md bg-amber-400 text-slate-950">
-                  1234
-                </span>
-              </div>
-              <p className="text-[10px] opacity-80">
-                {t.restoreDefaultPinDesc}
-              </p>
-              <button
-                type="button"
-                onClick={handleRestoreDefaultPin}
-                className="w-full py-2 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 active:scale-98 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer shadow-sm flex items-center justify-center gap-1.5"
-              >
-                <RotateCcw className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>{t.confirmRestoreDefault}</span>
-              </button>
-            </div>
-
-            {/* Master Key Custom Reset Option */}
-            <form onSubmit={handleMasterResetSubmit} className="space-y-3 pt-2 border-t border-slate-200 dark:border-[#1E1E21]">
-              <span className={`block text-[11px] font-bold ${isLight ? 'text-slate-700' : 'text-slate-300'}`}>
-                {isAr ? 'أو تعيين رمز جديد عبر مفتاح الاستعادة:' : 'Or set a new PIN via Master Recovery Key:'}
-              </span>
-
+            {/* Secure Master Key Authorized Reset Form */}
+            <form onSubmit={handleMasterResetSubmit} className="space-y-3 pt-1">
               <div>
                 <label className={`block text-[10px] mb-1 font-semibold uppercase ${
                   isLight ? 'text-slate-500' : 'text-[#9C9DA3]'
@@ -401,19 +354,19 @@ export const AdminLockScreen: React.FC<AdminLockScreenProps> = ({
                   {t.enterMasterKey}
                 </label>
                 <input
-                  type="text"
+                  type="password"
                   required
                   value={masterKeyInput}
                   onChange={(e) => setMasterKeyInput(e.target.value)}
-                  placeholder={t.masterKeyPlaceholder}
+                  placeholder="••••••••"
                   className={`w-full px-3 py-2 rounded-xl text-xs outline-none border transition ${
                     isLight 
                       ? 'bg-slate-50 border-slate-200 focus:border-amber-500 text-slate-900' 
                       : 'bg-[#000000] border-[#1E1E21] focus:border-amber-400 text-white'
                   }`}
                 />
-                <span className={`text-[9px] mt-0.5 block ${isLight ? 'text-slate-400' : 'text-[#5E5F64]'}`}>
-                  {isAr ? 'رمز الطوارئ الافتراضي: 9740 أو بريد المشرف المسجل' : 'Emergency master key: 9740 or registered admin email'}
+                <span className={`text-[9px] mt-1 block ${isLight ? 'text-slate-500' : 'text-[#9C9DA3]'}`}>
+                  {isAr ? '🔒 مفتاح الأمان المعتمد للمشرف مطلوب لإتمام إعادة التعيين' : '🔒 Authorized administrator recovery key is required'}
                 </span>
               </div>
 

@@ -291,33 +291,6 @@ export const AdminSettingsModal: React.FC<AdminSettingsModalProps> = ({
               <ShieldCheck className="w-4 h-4" />
               <span>{isAr ? 'حفظ وتحديث رمز المشرف' : 'Save & Update Admin PIN'}</span>
             </button>
-
-            {/* Quick Reset to Factory Default PIN */}
-            <div className="pt-2 text-center border-t border-slate-100 dark:border-[#1E1E21]">
-              <button
-                type="button"
-                onClick={() => {
-                  if (confirm(isAr ? 'هل أنت متأكد من استعادة رمز المرور الافتراضي (1234)؟' : 'Are you sure you want to restore the default Admin PIN (1234)?')) {
-                    try {
-                      localStorage.setItem('nasapp_admin_pin', '1234');
-                      setPinSuccess(isAr ? '✓ تم استعادة رمز المرور الافتراضي (1234) بنجاح' : '✓ Default Admin PIN (1234) restored successfully');
-                      setPinError(null);
-                      setCurrentPin('');
-                      setNewPin('');
-                      setConfirmPin('');
-                    } catch {
-                      setPinError(isAr ? 'فشل استعادة الرمز' : 'Failed to reset PIN');
-                    }
-                  }
-                }}
-                className={`text-[11px] font-semibold underline transition cursor-pointer flex items-center justify-center gap-1 mx-auto ${
-                  isLight ? 'text-amber-700 hover:text-amber-900' : 'text-amber-400 hover:text-amber-300'
-                }`}
-              >
-                <RotateCcw className="w-3 h-3" />
-                <span>{isAr ? 'استعادة رمز المرور الافتراضي (1234)' : 'Reset PIN to Default (1234)'}</span>
-              </button>
-            </div>
           </form>
         )}
 
